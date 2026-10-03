@@ -12,8 +12,16 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './App'
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <App />
-  </StrictMode>
+import { FONTS } from '@shared/palette'
+
+const fontsLoaded = Promise.all(
+  FONTS.flatMap((f) => [document.fonts.load(`400 16px "${f.family}"`), document.fonts.load(`700 16px "${f.family}"`)])
+).catch(() => undefined)
+
+void fontsLoaded.then(() =>
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <App />
+    </StrictMode>
+  )
 )

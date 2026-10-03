@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react'
 import { describeElement, formatPos, formatSpaces, formatMm } from '@shared/format'
 import { fitsOnPage, gridSize, unionRects } from '@shared/geometry'
 import type { Element, NotebookSpec, TextAlign } from '@shared/model'
-import { boundsOf } from '../measure'
+import { boundsOf, maxBetweenSize } from '../measure'
 import { useEditor } from '../store'
 import { NumField } from './fields'
 
@@ -102,7 +102,7 @@ function SingleElement({ el, spec, showPage }: { el: Element; spec: NotebookSpec
         {!fits && <p className="warn">Runs off the edge of the page.</p>}
       </div>
 
-      {el.type === 'text' && <TextEditor el={el} update={update} />}
+      {el.type === 'text' && <TextEditor el={el} spec={spec} update={update} />}
 
       <div className="field-grid">
         {el.type === 'line' && (
@@ -156,7 +156,15 @@ function SingleElement({ el, spec, showPage }: { el: Element; spec: NotebookSpec
   )
 }
 
-function TextEditor({ el, update }: { el: Extract<Element, { type: 'text' }>; update: (p: Partial<Element>) => void }) {
+function TextEditor({
+  el,
+  spec,
+  update
+}: {
+  el: Extract<Element, { type: 'text' }>
+  spec: NotebookSpec
+  update: (p: Partial<Element>) => void
+}) {
   const ref = useRef<HTMLTextAreaElement>(null)
   const focusRequested = useEditor((s) => s.textFocusRequested)
   // Focus only when explicitly requested (new text, double-click), not on every selection change.
@@ -181,6 +189,18 @@ function TextEditor({ el, update }: { el: Extract<Element, { type: 'text' }>; up
         style={{ fontFamily: `"${el.font}", cursive`, fontWeight: el.bold ? 700 : 400 }}
         aria-label="Text"
       />
+      <div className="segmented wide" role="group" aria-label="Placement">
+        {(['baseline', 'between'] as const).map((p) => (
+          <button
+            key={p}
+            className={el.placement === p ? 'active' : ''}
+            onClick={() => useEditor.getState().setStyle({ textPlacement: p })}
+          >
+            {p === 'baseline' ? 'On a dot row' : 'Between rows'}
+          </button>
+        ))}
+      </div>
+      {el.placement === 'between' && <BetweenFit el={el} spec={spec} update={update} />}
       <div className="row">
         <div className="segmented" role="group" aria-label="Alignment">
           {(['start', 'middle', 'end'] as TextAlign[]).map((a) => (
@@ -199,6 +219,30 @@ function TextEditor({ el, update }: { el: Extract<Element, { type: 'text' }>; up
         />
       </div>
     </div>
+  )
+}
+
+/** Whether 'between' text clears the dots above and below, and the largest size that does. */
+function BetweenFit({
+  el,
+  spec,
+  update
+}: {
+  el: Extract<Element, { type: 'text' }>
+  spec: NotebookSpec
+  update: (p: Partial<Element>) => void
+}) {
+  const max = maxBetweenSize(el, spec)
+  if (el.sizeDots <= max + 1e-6) {
+    return <p className="muted small">Clear of the dots. Fits up to size {max}.</p>
+  }
+  return (
+    <p className="small fit-warning">
+      <span className="warn">Letters touch the dots.</span> Fits up to size {max}.{' '}
+      <button className="link-btn" onClick={() => update({ sizeDots: max })}>
+        Use size {max}
+      </button>
+    </p>
   )
 }
 

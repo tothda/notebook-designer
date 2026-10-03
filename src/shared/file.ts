@@ -62,7 +62,9 @@ export function parseDesign(json: string): Design {
       Array.isArray(raw.palette) && raw.palette.every((c) => typeof c === 'string') && raw.palette.length > 0
         ? (raw.palette as string[])
         : base.palette,
-    elements: elements as unknown as Element[]
+    elements: (elements as unknown as Element[]).map((el) =>
+      el.type === 'text' && el.placement !== 'between' ? { ...el, placement: 'baseline' } : el
+    )
   }
 }
 

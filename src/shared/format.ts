@@ -18,7 +18,12 @@ export function formatSpaces(d: number): string {
   const sign = d < 0 ? '−' : ''
   if (Math.abs(frac) < 1e-6) return `${sign}${whole}`
   if (Math.abs(frac - 0.5) < 1e-6) return `${sign}${whole === 0 ? '' : whole}½`
-  return `${sign}${a.toFixed(2)}`
+  return `${sign}${Number(a.toFixed(2))}`
+}
+
+/** "1 space", "3 spaces", "½ space". */
+export function spacesLabel(d: number): string {
+  return `${formatSpaces(d)} space${Math.abs(d) > 1 + 1e-9 || Math.abs(d) < 1e-9 ? 's' : ''}`
 }
 
 export function formatMm(mm: number): string {
@@ -59,9 +64,19 @@ export function describeElement(el: Element, spec: NotebookSpec): string[] {
       ]
     }
     case 'text':
+      if (el.placement === 'between') {
+        const lines = el.text.split('\n').length
+        const anchor = el.align === 'start' ? 'Starts' : el.align === 'middle' ? 'Centred' : 'Ends'
+        return [
+          `Between rows ${formatDot(el.y)} and ${formatDot(el.y + el.lineHeightDots)}`,
+          `${anchor} at col ${formatDot(el.x)}`,
+          ...(lines > 1 ? [`${lines} lines, one every ${spacesLabel(el.lineHeightDots)}`] : []),
+          `Letter size ${spacesLabel(el.sizeDots)} (${mm(el.sizeDots)})`
+        ]
+      }
       return [
         `Baseline ${el.align === 'start' ? 'starts' : el.align === 'middle' ? 'centred' : 'ends'} at ${formatPos(el.x, el.y)}`,
-        `Letter size ${formatSpaces(el.sizeDots)} space${el.sizeDots === 1 ? '' : 's'} (${mm(el.sizeDots)})`
+        `Letter size ${spacesLabel(el.sizeDots)} (${mm(el.sizeDots)})`
       ]
     case 'dot':
       return [`At ${formatPos(el.x, el.y)}`]

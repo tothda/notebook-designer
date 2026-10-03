@@ -1,3 +1,4 @@
+import { DEFAULT_METRICS, textVerticalExtent, type FontMetrics } from './text'
 import { SPREAD_GAP_MM, type Element, type NotebookSpec, type PageId, type SpreadMode } from './model'
 
 export interface Rect {
@@ -69,9 +70,16 @@ export function approxTextWidthDots(text: string, sizeDots: number): number {
 }
 
 export type TextMeasurer = (text: string, font: string, bold: boolean, sizeDots: number) => number
+export type MetricsLookup = (font: string, bold: boolean) => FontMetrics
+
+const approxMeasure: TextMeasurer = (t, _f, _b, s) => approxTextWidthDots(t, s)
 
 /** Bounding box of an element in dot units (page-relative). */
-export function elementBounds(el: Element, measure: TextMeasurer = (t, _f, _b, s) => approxTextWidthDots(t, s)): Rect {
+export function elementBounds(
+  el: Element,
+  measure: TextMeasurer = approxMeasure,
+  metrics: MetricsLookup = () => DEFAULT_METRICS
+): Rect {
   switch (el.type) {
     case 'line':
       return {
@@ -88,14 +96,13 @@ export function elementBounds(el: Element, measure: TextMeasurer = (t, _f, _b, s
     case 'text': {
       const lines = el.text.split('\n')
       const w = Math.max(...lines.map((l) => measure(l, el.font, el.bold, el.sizeDots)))
-      const ascent = el.sizeDots * 0.75
       const x = el.align === 'start' ? el.x : el.align === 'middle' ? el.x - w / 2 : el.x - w
-      return {
-        x,
-        y: el.y - ascent,
-        w,
-        h: ascent + (lines.length - 1) * el.lineHeightDots + el.sizeDots * 0.25
+      if (el.placement === 'between') {
+        // The bands between dot rows, so the outline shows which rows the text sits between.
+        return { x, y: el.y, w, h: lines.length * el.lineHeightDots }
       }
+      const { top, bottom } = textVerticalExtent(el, metrics(el.font, el.bold))
+      return { x, y: top, w, h: bottom - top }
     }
   }
 }

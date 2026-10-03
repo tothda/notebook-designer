@@ -1,4 +1,6 @@
 import { gridSize } from '@shared/geometry'
+import { baselineDots } from '@shared/text'
+import { fontMetrics } from '../measure'
 import type { Dash, Element, NotebookSpec } from '@shared/model'
 
 /** SVG dash pattern in mm, scaled to the pen width so it reads like a hand-drawn dash. */
@@ -71,10 +73,11 @@ export function ElementShape({ el, spec }: Props) {
       )
     case 'text': {
       const lines = el.text.split('\n')
+      const m = fontMetrics(el.font, el.bold)
       return (
         <text
           x={X(el.x)}
-          y={Y(el.y)}
+          y={Y(baselineDots(el, 0, m))}
           fill={el.color}
           fontFamily={`"${el.font}", cursive`}
           fontWeight={el.bold ? 700 : 400}
@@ -83,7 +86,7 @@ export function ElementShape({ el, spec }: Props) {
           style={{ whiteSpace: 'pre' }}
         >
           {lines.map((line, i) => (
-            <tspan key={i} x={X(el.x)} y={Y(el.y + i * el.lineHeightDots)}>
+            <tspan key={i} x={X(el.x)} y={Y(baselineDots(el, i, m))}>
               {line || ' '}
             </tspan>
           ))}

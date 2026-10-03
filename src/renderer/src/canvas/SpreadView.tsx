@@ -15,8 +15,8 @@ import {
   visiblePages,
   type Rect
 } from '@shared/geometry'
-import type { Element, NotebookSpec, PageId, SpreadMode } from '@shared/model'
-import { boundsOf } from '../measure'
+import type { Element, NotebookSpec, PageId, SpreadMode, TextElement } from '@shared/model'
+import { boundsOf, fitBetween } from '../measure'
 import { newId, useEditor, type Style, type Tool } from '../store'
 import { ElementShape, PageBackground } from './ElementShape'
 
@@ -150,22 +150,24 @@ export function SpreadView() {
       return
     }
     if (tool === 'text') {
-      store.addElements([
-        {
-          id: newId(),
-          type: 'text',
-          page,
-          color: style.color,
-          x: pt.x,
-          y: pt.y,
-          text: 'Text',
-          font: style.font,
-          bold: style.bold,
-          sizeDots: style.sizeDots,
-          lineHeightDots: Math.max(1, Math.ceil(style.sizeDots)),
-          align: 'start'
-        }
-      ])
+      const between = style.textPlacement === 'between'
+      const rawY = mmToDotY(spec, mm.y)
+      const textEl: TextElement = {
+        id: newId(),
+        type: 'text',
+        page,
+        color: style.color,
+        x: pt.x,
+        y: between ? (step > 0 ? Math.floor(rawY / step) * step : rawY) : pt.y,
+        placement: style.textPlacement,
+        text: 'Text',
+        font: style.font,
+        bold: style.bold,
+        sizeDots: style.sizeDots,
+        lineHeightDots: Math.max(1, Math.ceil(style.sizeDots)),
+        align: 'start'
+      }
+      store.addElements([fitBetween(textEl, spec)])
       store.setTool('select')
       store.focusText()
       return

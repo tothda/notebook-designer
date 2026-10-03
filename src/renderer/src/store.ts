@@ -2,7 +2,9 @@ import { create } from 'zustand'
 import { temporal } from 'zundo'
 import { newDesign } from '@shared/file'
 import { translateElement } from '@shared/geometry'
-import type { Dash, Design, Element, NotebookSpec, SpreadMode } from '@shared/model'
+import type { Dash, Design, Element, NotebookSpec, SpreadMode, TextPlacement } from '@shared/model'
+import { withPlacement } from '@shared/text'
+import { fitBetween } from './measure'
 import { DEFAULT_FONT, DEFAULT_PALETTE } from '@shared/palette'
 
 export type Tool = 'select' | 'line' | 'rect' | 'ellipse' | 'text' | 'dot'
@@ -15,6 +17,7 @@ export interface Style {
   font: string
   bold: boolean
   sizeDots: number
+  textPlacement: TextPlacement
   dotSizeMm: number
 }
 
@@ -75,6 +78,7 @@ const defaultStyle: Style = {
   font: DEFAULT_FONT,
   bold: false,
   sizeDots: 1,
+  textPlacement: 'baseline',
   dotSizeMm: 1
 }
 
@@ -114,7 +118,13 @@ export const useEditor = create<EditorState & EditorActions>()(
       setStyle: (patch) => {
         set((s) => ({ style: { ...s.style, ...patch } }))
         const { selection } = get()
-        if (selection.length) get().updateElements(selection, (el) => applyStyle(el, patch))
+        if (!selection.length) return
+        const spec = get().design.notebook
+        // Explicit size changes are respected; otherwise keep between-rows text clear of the dots.
+        get().updateElements(selection, (el) => {
+          const styled = applyStyle(el, patch)
+          return patch.sizeDots === undefined ? fitBetween(styled, spec) : styled
+        })
       },
 
       select: (ids) =>
@@ -258,7 +268,7 @@ function styleOf(el: Element): Partial<Style> {
     case 'ellipse':
       return { color: el.color, strokeMm: el.strokeMm, dash: el.dash, fill: el.fill }
     case 'text':
-      return { color: el.color, font: el.font, bold: el.bold, sizeDots: el.sizeDots }
+      return { color: el.color, font: el.font, bold: el.bold, sizeDots: el.sizeDots, textPlacement: el.placement }
     case 'dot':
       return { color: el.color, dotSizeMm: el.sizeMm }
   }
@@ -277,6 +287,7 @@ function applyStyle(el: Element, p: Partial<Style>): Element {
     if (p.font !== undefined) next.font = p.font
     if (p.bold !== undefined) next.bold = p.bold
     if (p.sizeDots !== undefined) next.sizeDots = p.sizeDots
+    if (p.textPlacement !== undefined) return withPlacement(next as unknown as typeof el, p.textPlacement)
   }
   if (el.type === 'dot' && p.dotSizeMm !== undefined) next.sizeMm = p.dotSizeMm
   return next as unknown as Element

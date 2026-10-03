@@ -25,6 +25,11 @@ export type PageId = 'left' | 'right'
 export type SpreadMode = 'single' | 'double'
 export type Dash = 'solid' | 'dashed' | 'dotted'
 export type TextAlign = 'start' | 'middle' | 'end'
+/**
+ * 'baseline': letters stand on a dot row, like writing on a ruled line.
+ * 'between': each line is centred in the gap between two dot rows, clear of the dots.
+ */
+export type TextPlacement = 'baseline' | 'between'
 
 interface ElementBase {
   id: string
@@ -67,15 +72,19 @@ export interface EllipseElement extends ElementBase, Stroked {
 
 export interface TextElement extends ElementBase {
   type: 'text'
-  /** Start of the first baseline (sits on a dot row, like writing on a line). */
+  /**
+   * Horizontal anchor, and the vertical reference: the first baseline row for
+   * 'baseline' placement, or the dot row above the first line for 'between'.
+   */
   x: number
   y: number
+  placement: TextPlacement
   text: string
   font: string
   bold: boolean
   /** Font size expressed in dot spaces (1 = one dot pitch). */
   sizeDots: number
-  /** Distance between baselines of consecutive lines, in dot spaces. */
+  /** Distance between consecutive lines, in dot spaces (the band height for 'between'). */
   lineHeightDots: number
   align: TextAlign
 }

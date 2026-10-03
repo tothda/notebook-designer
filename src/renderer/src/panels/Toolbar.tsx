@@ -102,6 +102,24 @@ export function Toolbar() {
             }}
           />
         </label>
+        <div className="segmented" role="group" aria-label="Text placement">
+          <button
+            className={style.textPlacement === 'baseline' ? 'active' : ''}
+            title="Letters stand on a dot row"
+            aria-pressed={style.textPlacement === 'baseline'}
+            onClick={() => setStyle({ textPlacement: 'baseline' })}
+          >
+            On row
+          </button>
+          <button
+            className={style.textPlacement === 'between' ? 'active' : ''}
+            title="Letters sit in the gap between two dot rows, clear of the dots"
+            aria-pressed={style.textPlacement === 'between'}
+            onClick={() => setStyle({ textPlacement: 'between' })}
+          >
+            Between
+          </button>
+        </div>
         <button
           className={`text-btn bold${style.bold ? ' active' : ''}`}
           title="Bold"
@@ -115,7 +133,7 @@ export function Toolbar() {
       <div className="group">
         <label className="check" title="Snap to half-dot positions (hold Alt to place freely)">
           <input type="checkbox" checked={halfDotSnap} onChange={(e) => setHalfDotSnap(e.target.checked)} />
-          Half-dot snap
+          ½-dot snap
         </label>
       </div>
 
