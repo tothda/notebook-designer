@@ -6,14 +6,30 @@ export function centeredOffset(lengthMm: number, pitchMm: number): number {
   return round2((lengthMm - Math.max(spaces, 0) * pitchMm) / 2)
 }
 
-function preset(name: string, w: number, h: number, pitch = 5, dot = 0.5): NotebookSpec {
+/** Offset that centres a grid of exactly `dots` dots on a page dimension. */
+function offsetForDots(lengthMm: number, pitchMm: number, dots: number): number {
+  return round2((lengthMm - (dots - 1) * pitchMm) / 2)
+}
+
+/**
+ * `dots` gives the known dots across and down; without it the grid is
+ * centred with as many dots as fit.
+ */
+function preset(
+  name: string,
+  w: number,
+  h: number,
+  dots?: { cols: number; rows: number },
+  pitch = 5,
+  dot = 0.5
+): NotebookSpec {
   return {
     name,
     pageWidthMm: w,
     pageHeightMm: h,
     dotPitchMm: pitch,
-    gridOffsetXMm: centeredOffset(w, pitch),
-    gridOffsetYMm: centeredOffset(h, pitch),
+    gridOffsetXMm: dots ? offsetForDots(w, pitch, dots.cols) : centeredOffset(w, pitch),
+    gridOffsetYMm: dots ? offsetForDots(h, pitch, dots.rows) : centeredOffset(h, pitch),
     dotDiameterMm: dot
   }
 }
@@ -23,8 +39,8 @@ function preset(name: string, w: number, h: number, pitch = 5, dot = 0.5): Noteb
  * where the first dot sits) and adjust in Notebook settings.
  */
 export const NOTEBOOK_PRESETS: NotebookSpec[] = [
-  preset('Moleskine Pocket (A6) dotted', 90, 140),
-  preset('Moleskine Large (A5) dotted', 130, 210),
+  preset('Moleskine Pocket (A6) dotted', 90, 140, { cols: 17, rows: 27 }),
+  preset('Moleskine Large (A5) dotted', 130, 210, { cols: 25, rows: 41 }),
   preset('Moleskine XL dotted', 190, 250),
   preset('Leuchtturm1917 Pocket (A6) dotted', 90, 150),
   preset('Leuchtturm1917 Medium (A5) dotted', 145, 210),
