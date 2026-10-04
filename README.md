@@ -44,7 +44,7 @@ The page strip under the canvas adds, duplicates, reorders and deletes spreads. 
 
 ## Gallery
 
-Ready-made layouts for a Moleskine Large (A5) dotted notebook. Download a `.nbdesign` file from [`examples/`](examples) and open it with **File → Open**, then duplicate the spread and edit the dates for another month.
+Ready-made layouts for a Moleskine Large (A5) dotted notebook, measured with the first dot 5 mm from the page edges (25 × 41 dots). Download a `.nbdesign` file from [`examples/`](examples) and open it with **File → Open**, then duplicate the spread and edit the dates for another month.
 
 ### Month grid
 
