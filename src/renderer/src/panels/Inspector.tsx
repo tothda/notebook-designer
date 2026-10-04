@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react'
 import { describeElement, formatPos, formatSpaces, formatMm } from '@shared/format'
 import { fitsOnPage, gridSize, unionRects } from '@shared/geometry'
 import type { Element, NotebookSpec, TextAlign } from '@shared/model'
@@ -165,24 +164,9 @@ function TextEditor({
   spec: NotebookSpec
   update: (p: Partial<Element>) => void
 }) {
-  const ref = useRef<HTMLTextAreaElement>(null)
-  const focusRequested = useEditor((s) => s.textFocusRequested)
-  // Focus only when explicitly requested (new text, double-click), not on every selection change.
-  useEffect(() => {
-    if (!focusRequested) return
-    useEditor.setState({ textFocusRequested: false })
-    // Defer: the canvas click that requested focus would otherwise move it back to the page.
-    // No cleanup: resetting the flag re-runs this effect, which must not cancel the focus.
-    setTimeout(() => {
-      ref.current?.focus()
-      ref.current?.select()
-    })
-  }, [focusRequested, el.id])
-
   return (
     <div className="text-editor">
       <textarea
-        ref={ref}
         value={el.text}
         rows={Math.min(6, el.text.split('\n').length + 1)}
         onChange={(e) => update({ text: e.target.value })}

@@ -19,6 +19,7 @@ import type { Element, NotebookSpec, PageId, SpreadMode, TextElement } from '@sh
 import { boundsOf, fitBetween } from '../measure'
 import { newId, useEditor, type Style, type Tool } from '../store'
 import { ElementShape, PageBackground } from './ElementShape'
+import { InlineTextEditor } from './InlineTextEditor'
 
 /** Space around the spread for rulers, in mm. */
 const MARGIN_MM = 14
@@ -54,6 +55,11 @@ export function SpreadView() {
   const [drag, setDrag] = useState<Drag | null>(null)
   const dragRef = useRef<Drag | null>(null)
   const zoomAnchor = useRef<{ mm: Pt; client: Pt } | null>(null)
+  /** Element under the last pointer press; double-clicks land on the SVG due to pointer capture. */
+  const lastPressedId = useRef<string | null>(null)
+  /** Text being edited in place. The draft is committed as one undo step when editing ends. */
+  const [editing, setEditing] = useState<{ id: string; text: string; isNew: boolean } | null>(null)
+  const [selectAllRequest, setSelectAllRequest] = useState(0)
 
   const totalW = spreadWidthMm(spec, spread) + MARGIN_MM * 2
   const totalH = spec.pageHeightMm + MARGIN_MM * 2
@@ -123,10 +129,34 @@ export function SpreadView() {
 
   // ---- preview of in-progress edits ---------------------------------------
 
-  const preview = useMemo(
-    () => buildPreview(design.elements, drag, style),
-    [design.elements, drag, style]
-  )
+  const preview = useMemo(() => {
+    const p = buildPreview(design.elements, drag, style)
+    if (!editing) return p
+    return {
+      ...p,
+      elements: p.elements.map((el) => (el.id === editing.id && el.type === 'text' ? { ...el, text: editing.text } : el))
+    }
+  }, [design.elements, drag, style, editing])
+
+  const startEditing = (el: Element, isNew = false) => {
+    if (el.type !== 'text') return
+    useEditor.getState().select([el.id])
+    setEditing({ id: el.id, text: el.text, isNew })
+  }
+
+  const finishEditing = () => {
+    if (!editing) return
+    setEditing(null)
+    const store = useEditor.getState()
+    const original = store.design.elements.find((e) => e.id === editing.id)
+    if (!original || original.type !== 'text') return
+    if (editing.text.trim() === '') {
+      store.select([editing.id])
+      store.deleteSelection()
+    } else if (editing.text !== original.text) {
+      store.updateElements([editing.id], (e) => ({ ...e, text: editing.text }) as Element)
+    }
+  }
 
   // ---- pointer handlers ---------------------------------------------------
 
@@ -141,6 +171,7 @@ export function SpreadView() {
     const store = useEditor.getState()
 
     if (tool === 'select') {
+      lastPressedId.current = null
       updateDrag({ kind: 'marquee', startMm: mm, currentMm: mm, base: e.shiftKey ? store.selection : [] })
       if (!e.shiftKey) store.select([])
       return
@@ -150,6 +181,8 @@ export function SpreadView() {
       return
     }
     if (tool === 'text') {
+      // Keep the browser from moving focus to the page, which would end in-place editing at once.
+      e.preventDefault()
       const between = style.textPlacement === 'between'
       const rawY = mmToDotY(spec, mm.y)
       const textEl: TextElement = {
@@ -169,7 +202,7 @@ export function SpreadView() {
       }
       store.addElements([fitBetween(textEl, spec)])
       store.setTool('select')
-      store.focusText()
+      startEditing(textEl, true)
       return
     }
     updateDrag({ kind: 'create', tool, page, start: pt, current: pt, square: e.shiftKey })
@@ -178,6 +211,7 @@ export function SpreadView() {
   const onElementPointerDown = (e: React.PointerEvent, el: Element) => {
     if (tool !== 'select' || e.button !== 0) return
     e.stopPropagation()
+    lastPressedId.current = el.id
     svgRef.current!.setPointerCapture(e.pointerId)
     const store = useEditor.getState()
     let ids = store.selection
@@ -260,8 +294,15 @@ export function SpreadView() {
     if (!dragRef.current) useEditor.getState().setCursor(null)
   }
 
-  const onDoubleClick = (el: Element) => {
-    if (el.type === 'text') useEditor.getState().focusText()
+  // A triple-click's third click normally lands on the editor itself; this covers the case
+  // where it lands on the canvas instead.
+  const onClick = (e: React.MouseEvent) => {
+    if (e.detail >= 3 && editing && editing.id === lastPressedId.current) setSelectAllRequest((n) => n + 1)
+  }
+
+  const onDoubleClick = () => {
+    const el = design.elements.find((x) => x.id === lastPressedId.current)
+    if (tool === 'select' && el) startEditing(el)
   }
 
   // ---- render --------------------------------------------------------------
@@ -269,91 +310,110 @@ export function SpreadView() {
   const px = zoom || 1
   const selected = new Set(selection)
   const { cols, rows } = gridSize(spec)
+  const editingEl = editing
+    ? preview.elements.find((el): el is TextElement => el.id === editing.id && el.type === 'text')
+    : undefined
 
   return (
     <div className="canvas-scroll" ref={scrollRef}>
       <div className="canvas-inner">
-        <svg
-          ref={svgRef}
-          className={`canvas tool-${tool}`}
-          width={totalW * px}
-          height={totalH * px}
-          viewBox={`${-MARGIN_MM} ${-MARGIN_MM} ${totalW} ${totalH}`}
-          onPointerDown={onPointerDown}
-          onPointerMove={onPointerMove}
-          onPointerUp={onPointerUp}
-          onPointerCancel={onPointerUp}
-          onPointerLeave={onPointerLeave}
-        >
-          {pages.map((page) => {
-            const pageEls = preview.elements.filter((el) => el.page === page)
-            const created = preview.created?.page === page ? preview.created : null
-            return (
-              <g key={page} transform={`translate(${pageOriginMm(spec, page)} 0)`}>
-                <PageBackground spec={spec} showDots showBorder />
-                <Rulers
-                  spec={spec}
-                  page={page}
-                  spread={spread}
-                  cols={cols}
-                  rows={rows}
-                  px={px}
-                  hover={cursor && cursor.page === page ? cursor : null}
-                />
-                <g pointerEvents="none">
-                  {pageEls.map((el) => (
-                    <ElementShape key={el.id} el={el} spec={spec} />
-                  ))}
-                  {created && <ElementShape el={created} spec={spec} />}
-                </g>
-                {tool === 'select' && (
-                  <g>
-                    {pageEls.map((el) => (
-                      <HitArea
-                        key={el.id}
-                        el={el}
-                        spec={spec}
-                        px={px}
-                        onPointerDown={(e) => onElementPointerDown(e, el)}
-                        onDoubleClick={() => onDoubleClick(el)}
-                      />
-                    ))}
-                  </g>
-                )}
-                <g pointerEvents="none">
-                  {pageEls.map((el) => {
-                    const b = boundsOf(el)
-                    const off = !fitsOnPage(spec, b)
-                    if (!selected.has(el.id) && !off) return null
-                    return (
-                      <BoundsOutline key={el.id} spec={spec} b={b} color={off ? '#d43a2f' : SELECT_COLOR} />
-                    )
-                  })}
-                </g>
-                {tool === 'select' && selection.length === 1 && (
-                  <Handles
-                    el={pageEls.find((el) => el.id === selection[0])}
+        <div className="canvas-stage">
+          <svg
+            ref={svgRef}
+            className={`canvas tool-${tool}`}
+            width={totalW * px}
+            height={totalH * px}
+            viewBox={`${-MARGIN_MM} ${-MARGIN_MM} ${totalW} ${totalH}`}
+            onPointerDown={onPointerDown}
+            onPointerMove={onPointerMove}
+            onPointerUp={onPointerUp}
+            onPointerCancel={onPointerUp}
+            onPointerLeave={onPointerLeave}
+            onDoubleClick={onDoubleClick}
+            onClick={onClick}
+          >
+            {pages.map((page) => {
+              const pageEls = preview.elements.filter((el) => el.page === page)
+              const created = preview.created?.page === page ? preview.created : null
+              return (
+                <g key={page} transform={`translate(${pageOriginMm(spec, page)} 0)`}>
+                  <PageBackground spec={spec} showDots showBorder />
+                  <Rulers
                     spec={spec}
+                    page={page}
+                    spread={spread}
+                    cols={cols}
+                    rows={rows}
                     px={px}
-                    onPointerDown={onHandlePointerDown}
+                    hover={cursor && cursor.page === page ? cursor : null}
                   />
-                )}
-                {tool !== 'select' && cursor && cursor.page === page && (
-                  <circle
-                    cx={spec.gridOffsetXMm + cursor.x * spec.dotPitchMm}
-                    cy={spec.gridOffsetYMm + cursor.y * spec.dotPitchMm}
-                    r={4 / px}
-                    fill="none"
-                    stroke={SELECT_COLOR}
-                    strokeWidth={1.5 / px}
-                    pointerEvents="none"
-                  />
-                )}
-              </g>
-            )
-          })}
-          {drag?.kind === 'marquee' && <Marquee a={drag.startMm} b={drag.currentMm} />}
-        </svg>
+                  <g pointerEvents="none">
+                    {pageEls.map((el) => (
+                      <ElementShape key={el.id} el={el} spec={spec} />
+                    ))}
+                    {created && <ElementShape el={created} spec={spec} />}
+                  </g>
+                  {tool === 'select' && (
+                    <g>
+                      {pageEls.map((el) => (
+                        <HitArea
+                          key={el.id}
+                          el={el}
+                          spec={spec}
+                          px={px}
+                          onPointerDown={(e) => onElementPointerDown(e, el)}
+                        />
+                      ))}
+                    </g>
+                  )}
+                  <g pointerEvents="none">
+                    {pageEls.map((el) => {
+                      const b = boundsOf(el)
+                      const off = !fitsOnPage(spec, b)
+                      if (!selected.has(el.id) && !off) return null
+                      return (
+                        <BoundsOutline key={el.id} spec={spec} b={b} color={off ? '#d43a2f' : SELECT_COLOR} />
+                      )
+                    })}
+                  </g>
+                  {tool === 'select' && selection.length === 1 && (
+                    <Handles
+                      el={pageEls.find((el) => el.id === selection[0])}
+                      spec={spec}
+                      px={px}
+                      onPointerDown={onHandlePointerDown}
+                    />
+                  )}
+                  {tool !== 'select' && cursor && cursor.page === page && (
+                    <circle
+                      cx={spec.gridOffsetXMm + cursor.x * spec.dotPitchMm}
+                      cy={spec.gridOffsetYMm + cursor.y * spec.dotPitchMm}
+                      r={4 / px}
+                      fill="none"
+                      stroke={SELECT_COLOR}
+                      strokeWidth={1.5 / px}
+                      pointerEvents="none"
+                    />
+                  )}
+                </g>
+              )
+            })}
+            {drag?.kind === 'marquee' && <Marquee a={drag.startMm} b={drag.currentMm} />}
+          </svg>
+          {editingEl && (
+            <InlineTextEditor
+              key={editingEl.id}
+              el={editingEl}
+              spec={spec}
+              px={px}
+              marginMm={MARGIN_MM}
+              selectAll={editing!.isNew}
+              selectAllRequest={selectAllRequest}
+              onChange={(text) => setEditing((cur) => (cur ? { ...cur, text } : cur))}
+              onDone={finishEditing}
+            />
+          )}
+        </div>
       </div>
     </div>
   )
@@ -415,11 +475,10 @@ function HitArea(props: {
   spec: NotebookSpec
   px: number
   onPointerDown: (e: React.PointerEvent) => void
-  onDoubleClick: () => void
 }) {
-  const { el, spec, px, onPointerDown, onDoubleClick } = props
+  const { el, spec, px, onPointerDown } = props
   const hitW = 10 / px
-  const common = { onPointerDown, onDoubleClick, className: 'hit' }
+  const common = { onPointerDown, className: 'hit' }
   const X = (d: number) => spec.gridOffsetXMm + d * spec.dotPitchMm
   const Y = (d: number) => spec.gridOffsetYMm + d * spec.dotPitchMm
   switch (el.type) {

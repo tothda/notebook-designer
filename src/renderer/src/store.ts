@@ -39,7 +39,6 @@ interface EditorState {
   lastDuplicate: { sourceIds: string[]; copyIds: string[] } | null
   cursor: { page: string; x: number; y: number } | null
   printOpen: boolean
-  textFocusRequested: boolean
 }
 
 interface EditorActions {
@@ -65,7 +64,6 @@ interface EditorActions {
   setPalette(palette: string[]): void
   loadDesign(design: Design, path: string | null, markSaved: boolean): void
   markSaved(path: string | null): void
-  focusText(): void
 }
 
 const initial = newDesign()
@@ -104,7 +102,6 @@ export const useEditor = create<EditorState & EditorActions>()(
       lastDuplicate: null,
       cursor: null,
       printOpen: false,
-      textFocusRequested: false,
 
       // Style changes made with a drawing tool active are meant for the next shape, not the selection.
       setTool: (tool) => set((s) => ({ tool, selection: tool === 'select' ? s.selection : [] })),
@@ -113,7 +110,6 @@ export const useEditor = create<EditorState & EditorActions>()(
       setHalfDotSnap: (halfDotSnap) => set({ halfDotSnap }),
       setCursor: (cursor) => set({ cursor }),
       setPrintOpen: (printOpen) => set({ printOpen }),
-      focusText: () => set({ textFocusRequested: true, sidebarTab: 'inspector' }),
 
       setStyle: (patch) => {
         set((s) => ({ style: { ...s.style, ...patch } }))

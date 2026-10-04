@@ -689,3 +689,29 @@ kbd {
 .fit-warning .link-btn {
   padding: 0;
 }
+
+.canvas-stage {
+  position: relative;
+}
+
+/* In-place text editing: the SVG draws the glyphs; this only provides caret and selection. */
+.inline-text-editor {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  white-space: pre;
+  background: transparent;
+  color: transparent;
+}
+
+.inline-text-editor:focus-visible {
+  outline: none;
+}
+
+.inline-text-editor::selection {
+  background: rgba(47, 124, 246, 0.25);
+}
