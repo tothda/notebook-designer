@@ -49,7 +49,7 @@ Get the latest version from the **[Releases page](https://github.com/tothda/note
 | --- | --- |
 | macOS (Apple Silicon) | `Notebook-Designer-<version>-mac-arm64.dmg` |
 | macOS (Intel) | `Notebook-Designer-<version>-mac-x64.dmg` |
-| Windows | `Notebook-Designer-<version>-windows-x64-setup.exe` (or `-arm64-`) |
+| Windows | `Notebook-Designer-<version>-windows-setup.exe` (picks x64 or ARM automatically) |
 | Linux | `.AppImage` (any distribution) or `.deb` (Debian/Ubuntu), for x64 and arm64 |
 
 The builds aren't signed with paid developer certificates, so your system will warn you the first time:
