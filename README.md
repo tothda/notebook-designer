@@ -42,6 +42,42 @@ The page strip under the canvas adds, duplicates, reorders and deletes spreads. 
 
 ![The exported A4 PDF: the October spread at 100% scale with a 50 mm calibration ruler](docs/screenshots/print-a4.png)
 
+## Gallery
+
+Ready-made layouts for a Moleskine Large (A5) dotted notebook, measured with the first dot 5 mm from the page edges (25 × 41 dots). Download a `.nbdesign` file from [`examples/`](examples) and open it with **File → Open**, then duplicate the spread and edit the dates for another month.
+
+### Month grid
+
+A classic box calendar across two pages, weeks starting on Monday. Each day gets a 6 × 7-dot box, weekends are marked in red, and a side column holds focus points and notes.
+
+![October month grid: Monday to Thursday on the left page, Friday to Sunday with focus and notes columns on the right](docs/gallery/october-2026-month-grid-a5.png)
+
+[`october-2026-month-grid-a5.nbdesign`](examples/october-2026-month-grid-a5.nbdesign)
+
+### Daily list with habits
+
+Two rows per day for plans and appointments, the first half of the month on the left page and the rest on the right. Six one-dot columns track habits; write their names upwards in the empty header boxes.
+
+![October daily list: each day has a date, a plans line and six habit boxes, with weekends shaded](docs/gallery/october-2026-daily-list-a5.png)
+
+[`october-2026-daily-list-a5.nbdesign`](examples/october-2026-daily-list-a5.nbdesign)
+
+### Month overview and weekly review
+
+A planning page with a mini calendar, goals, important dates, a to-do list and notes, facing a page with one box per week for its highlight and lesson.
+
+![October overview: mini calendar, goals, important dates, to do and notes on the left, week-by-week review boxes on the right](docs/gallery/october-2026-overview-a5.png)
+
+[`october-2026-overview-a5.nbdesign`](examples/october-2026-overview-a5.nbdesign)
+
+### Life scores
+
+One page to score each area of life every day, from 1 (rough) to 5 (great), with a line for the best moment of the day and a row for the monthly averages.
+
+<img src="docs/gallery/october-2026-life-scores-a5.png" width="480" alt="October life scores: one row per day with score columns for wife, daughter, work, food, well-being, home, content and friends and family">
+
+[`october-2026-life-scores-a5.nbdesign`](examples/october-2026-life-scores-a5.nbdesign)
+
 ## Download
 
 Get the latest version from the **[Releases page](https://github.com/tothda/notebook-designer/releases/latest)**:
@@ -74,7 +110,7 @@ npm run dev
 
 > With npm 11 or newer, install scripts must be approved. The repository's `package.json` already allows the ones Electron and esbuild need to download their binaries.
 
-To explore, open [`examples/october-2026.nbdesign`](examples/october-2026.nbdesign) with **File → Open**. It contains the monthly and weekly spreads shown above.
+To explore, open [`examples/october-2026.nbdesign`](examples/october-2026.nbdesign) with **File → Open**. It contains the monthly and weekly spreads shown above. The [Gallery](#gallery) designs are in the same folder.
 
 ## A typical workflow
 
