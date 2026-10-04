@@ -1,5 +1,6 @@
 {
   "name": "notebook-designer",
+  "productName": "Notebook Designer",
   "version": "0.1.0",
   "description": "Design dotted-notebook and bullet-journal layouts on a true-to-scale dot grid before copying them to paper",
   "license": "MIT",
@@ -23,33 +24,38 @@
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dist": "electron-vite build && electron-builder",
+    "dist:mac": "electron-vite build && electron-builder --mac",
+    "dist:win": "electron-vite build && electron-builder --win",
+    "dist:linux": "electron-vite build && electron-builder --linux"
   },
-  "dependencies": {
+  "devDependencies": {
     "@fontsource/caveat": "^5.3.0",
     "@fontsource/inter": "^5.3.0",
     "@fontsource/kalam": "^5.3.0",
     "@fontsource/patrick-hand": "^5.3.0",
     "@fontsource/shadows-into-light": "^5.3.0",
-    "react": "^19.3.0",
-    "react-dom": "^19.3.0",
-    "zundo": "^2.3.0",
-    "zustand": "^5.0.15"
-  },
-  "devDependencies": {
     "@types/node": "^26.6.4",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "@vitejs/plugin-react": "^5.2.0",
     "electron": "^44.5.1",
+    "electron-builder": "^26.15.3",
     "electron-vite": "^5.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "typescript": "^7.0.2",
     "vite": "^7.3.6",
-    "vitest": "^3.2.7"
+    "vitest": "^3.2.7",
+    "zundo": "^2.3.0",
+    "zustand": "^5.0.15"
   },
   "allowScripts": {
     "electron@44.5.1": true,
     "esbuild@0.25.12": true,
-    "esbuild@0.28.2": true
+    "esbuild@0.28.2": true,
+    "electron-winstaller": false,
+    "fsevents": false
   }
 }

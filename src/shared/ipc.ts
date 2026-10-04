@@ -36,4 +36,6 @@ export interface Api {
   onMenu(cb: (cmd: MenuCommand) => void): () => void
   onFileLoaded(cb: (file: LoadedFile) => void): () => void
   openFile(): Promise<void>
+  /** Tell the main process the UI is ready to receive files to open. */
+  ready(): Promise<void>
 }

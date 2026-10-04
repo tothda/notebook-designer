@@ -1,0 +1,57 @@
+appId: com.tothda.notebookdesigner
+productName: Notebook Designer
+copyright: Copyright © 2026 Dávid Tóth
+directories:
+  output: dist
+  buildResources: build
+files:
+  - out/**
+  - package.json
+  - '!**/*.map'
+asar: true
+artifactName: Notebook-Designer-${version}-${os}-${arch}.${ext}
+
+fileAssociations:
+  - ext: nbdesign
+    name: Notebook design
+    description: Notebook Designer layout
+    mimeType: application/x-notebook-design
+    role: Editor
+
+mac:
+  category: public.app-category.productivity
+  target:
+    - target: dmg
+      arch: [arm64, x64]
+    - target: zip
+      arch: [arm64, x64]
+  # Ad-hoc signed only (no Apple Developer ID): macOS asks users to confirm the first
+  # launch via System Settings › Privacy & Security › Open Anyway. See the README.
+  identity: '-'
+
+win:
+  target:
+    - target: nsis
+      arch: [x64, arm64]
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  artifactName: Notebook-Designer-${version}-windows-${arch}-setup.${ext}
+
+linux:
+  target:
+    - target: AppImage
+      arch: [x64, arm64]
+    - target: deb
+      arch: [x64, arm64]
+  category: Office
+  maintainer: Dávid Tóth <tothda@users.noreply.github.com>
+  synopsis: Design dotted-notebook layouts at true scale
+
+publish:
+  provider: github
+  owner: tothda
+  repo: notebook-designer
+  releaseType: release

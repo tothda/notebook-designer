@@ -1,5 +1,5 @@
 import { app, BrowserWindow, dialog, ipcMain, Menu, shell, type MenuItemConstructorOptions } from 'electron'
-import { promises as fs } from 'node:fs'
+import { existsSync, promises as fs } from 'node:fs'
 import { basename, join } from 'node:path'
 import { FILE_EXTENSION } from '@shared/file'
 import type { MenuCommand, PdfOptions } from '@shared/ipc'
@@ -11,6 +11,19 @@ const fileFilters = [{ name: 'Notebook design', extensions: [FILE_EXTENSION] }]
 
 let win: BrowserWindow | null = null
 let recent: string[] = []
+/** A file the OS asked us to open before the window was ready to receive it. */
+let pendingOpen: string | null = fileFromArgs(process.argv)
+let rendererReady = false
+
+/** A design file passed on the command line (Windows/Linux file associations). */
+function fileFromArgs(argv: string[]): string | null {
+  return argv.slice(1).find((a) => a.toLowerCase().endsWith(`.${FILE_EXTENSION}`)) ?? null
+}
+
+function openWhenReady(path: string): void {
+  if (win && rendererReady) void loadFile(path)
+  else pendingOpen = path
+}
 
 function createWindow(): void {
   win = new BrowserWindow({
@@ -26,7 +39,10 @@ function createWindow(): void {
       sandbox: true
     }
   })
-  win.on('closed', () => (win = null))
+  win.on('closed', () => {
+    win = null
+    rendererReady = false
+  })
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (url.startsWith('https:')) void shell.openExternal(url)
     return { action: 'deny' }
@@ -203,7 +219,49 @@ ipcMain.handle('print', (_e, opts: PdfOptions) => {
   })
 })
 
+// The renderer calls this once it has restored the autosave, so an opened file isn't overwritten.
+ipcMain.handle('app:ready', () => {
+  rendererReady = true
+  if (pendingOpen) {
+    void loadFile(pendingOpen)
+    pendingOpen = null
+  }
+})
+
+// One window per app: opening a file while running hands it to the existing window.
+if (!app.requestSingleInstanceLock()) app.quit()
+
+app.on('second-instance', (_e, argv) => {
+  if (win) {
+    if (win.isMinimized()) win.restore()
+    win.focus()
+  }
+  const file = fileFromArgs(argv)
+  if (file) openWhenReady(file)
+})
+
+/**
+ * Early versions stored their data under the package name ("notebook-designer"); bring the
+ * autosave and recent files over to the current data folder once.
+ */
+async function migrateLegacyData(): Promise<void> {
+  const legacy = join(app.getPath('appData'), 'notebook-designer')
+  const current = app.getPath('userData')
+  // Only migrate into the default location, not a custom --user-data-dir.
+  const isDefault = current === join(app.getPath('appData'), app.getName())
+  if (!isDefault || legacy === current || !existsSync(legacy)) return
+  for (const file of [`autosave.${FILE_EXTENSION}`, 'recent.json']) {
+    const from = join(legacy, file)
+    const to = join(current, file)
+    if (existsSync(from) && !existsSync(to)) {
+      await fs.mkdir(current, { recursive: true })
+      await fs.copyFile(from, to)
+    }
+  }
+}
+
 app.whenReady().then(async () => {
+  await migrateLegacyData()
   await loadRecent()
   buildMenu()
   createWindow()
@@ -212,9 +270,10 @@ app.whenReady().then(async () => {
   })
 })
 
+// macOS: Finder "Open With" and double-clicking a design file. May fire before the app is ready.
 app.on('open-file', (event, path) => {
   event.preventDefault()
-  if (win) void loadFile(path)
+  openWhenReady(path)
 })
 
 app.on('window-all-closed', () => {

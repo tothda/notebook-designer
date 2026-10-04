@@ -10,6 +10,7 @@ function listen<T>(channel: string, cb: (arg: T) => void): () => void {
 const api: Api = {
   saveFile: (path, content, defaultName) => ipcRenderer.invoke('file:save', path, content, defaultName),
   openFile: () => ipcRenderer.invoke('file:open'),
+  ready: () => ipcRenderer.invoke('app:ready'),
   autosaveWrite: (content) => ipcRenderer.invoke('autosave:write', content),
   autosaveRead: () => ipcRenderer.invoke('autosave:read'),
   exportPdf: (opts) => ipcRenderer.invoke('pdf:export', opts),

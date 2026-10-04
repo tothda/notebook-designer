@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#fffdf8"/>
+      <stop offset="1" stop-color="#f1ede3"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="125%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000" flood-opacity="0.22"/>
+    </filter>
+    <clipPath id="page"><rect x="100" y="100" width="824" height="824" rx="185"/></clipPath>
+  </defs>
+  <rect x="100" y="100" width="824" height="824" rx="185" fill="url(#bg)" filter="url(#shadow)"/>
+  <circle cx="250" cy="225" r="7" fill="#b9b4a8"/><circle cx="322" cy="225" r="7" fill="#b9b4a8"/><circle cx="394" cy="225" r="7" fill="#b9b4a8"/><circle cx="466" cy="225" r="7" fill="#b9b4a8"/><circle cx="538" cy="225" r="7" fill="#b9b4a8"/><circle cx="610" cy="225" r="7" fill="#b9b4a8"/><circle cx="682" cy="225" r="7" fill="#b9b4a8"/><circle cx="250" cy="297" r="7" fill="#b9b4a8"/><circle cx="322" cy="297" r="7" fill="#b9b4a8"/><circle cx="394" cy="297" r="7" fill="#b9b4a8"/><circle cx="466" cy="297" r="7" fill="#b9b4a8"/><circle cx="538" cy="297" r="7" fill="#b9b4a8"/><circle cx="610" cy="297" r="7" fill="#b9b4a8"/><circle cx="682" cy="297" r="7" fill="#b9b4a8"/><circle cx="250" cy="369" r="7" fill="#b9b4a8"/><circle cx="322" cy="369" r="7" fill="#b9b4a8"/><circle cx="394" cy="369" r="7" fill="#b9b4a8"/><circle cx="466" cy="369" r="7" fill="#b9b4a8"/><circle cx="538" cy="369" r="7" fill="#b9b4a8"/><circle cx="610" cy="369" r="7" fill="#b9b4a8"/><circle cx="682" cy="369" r="7" fill="#b9b4a8"/><circle cx="250" cy="441" r="7" fill="#b9b4a8"/><circle cx="322" cy="441" r="7" fill="#b9b4a8"/><circle cx="394" cy="441" r="7" fill="#b9b4a8"/><circle cx="466" cy="441" r="7" fill="#b9b4a8"/><circle cx="538" cy="441" r="7" fill="#b9b4a8"/><circle cx="610" cy="441" r="7" fill="#b9b4a8"/><circle cx="682" cy="441" r="7" fill="#b9b4a8"/><circle cx="250" cy="513" r="7" fill="#b9b4a8"/><circle cx="322" cy="513" r="7" fill="#b9b4a8"/><circle cx="394" cy="513" r="7" fill="#b9b4a8"/><circle cx="466" cy="513" r="7" fill="#b9b4a8"/><circle cx="538" cy="513" r="7" fill="#b9b4a8"/><circle cx="610" cy="513" r="7" fill="#b9b4a8"/><circle cx="682" cy="513" r="7" fill="#b9b4a8"/><circle cx="250" cy="585" r="7" fill="#b9b4a8"/><circle cx="322" cy="585" r="7" fill="#b9b4a8"/><circle cx="394" cy="585" r="7" fill="#b9b4a8"/><circle cx="466" cy="585" r="7" fill="#b9b4a8"/><circle cx="538" cy="585" r="7" fill="#b9b4a8"/><circle cx="610" cy="585" r="7" fill="#b9b4a8"/><circle cx="682" cy="585" r="7" fill="#b9b4a8"/><circle cx="250" cy="657" r="7" fill="#b9b4a8"/><circle cx="322" cy="657" r="7" fill="#b9b4a8"/><circle cx="394" cy="657" r="7" fill="#b9b4a8"/><circle cx="466" cy="657" r="7" fill="#b9b4a8"/><circle cx="538" cy="657" r="7" fill="#b9b4a8"/><circle cx="610" cy="657" r="7" fill="#b9b4a8"/><circle cx="682" cy="657" r="7" fill="#b9b4a8"/><circle cx="250" cy="729" r="7" fill="#b9b4a8"/><circle cx="322" cy="729" r="7" fill="#b9b4a8"/><circle cx="394" cy="729" r="7" fill="#b9b4a8"/><circle cx="466" cy="729" r="7" fill="#b9b4a8"/><circle cx="538" cy="729" r="7" fill="#b9b4a8"/><circle cx="610" cy="729" r="7" fill="#b9b4a8"/><circle cx="682" cy="729" r="7" fill="#b9b4a8"/>
+  <rect x="250" y="369" width="432" height="360" rx="10" fill="#c8312b" fill-opacity="0.12" stroke="#c8312b" stroke-width="16" stroke-linejoin="round"/>
+  <line x1="394" y1="369" x2="394" y2="729" stroke="#c8312b" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+  <line x1="538" y1="369" x2="538" y2="729" stroke="#c8312b" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+  <line x1="250" y1="549" x2="682" y2="549" stroke="#c8312b" stroke-width="10" stroke-linecap="round" opacity="0.6"/>
+  <path d="M250 268 C 300 250, 360 290, 420 262 S 520 250, 560 268" fill="none" stroke="#2453a6" stroke-width="20" stroke-linecap="round"/>
+  <rect x="770" y="100" width="44" height="824" fill="#1c1c1c" clip-path="url(#page)"/>
+</svg>

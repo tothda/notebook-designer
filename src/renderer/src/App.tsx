@@ -86,6 +86,11 @@ export function App() {
     }
   }, [])
 
+  // Files opened from Finder/Explorer are delivered only after the autosave is restored.
+  useEffect(() => {
+    if (restored) void window.api.ready()
+  }, [restored])
+
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => handleKey(e)
     const clip = (fn: () => void) => (e: ClipboardEvent) => {

@@ -41,7 +41,26 @@ The page strip under the canvas adds, duplicates, reorders and deletes spreads. 
 
 ![The exported A4 PDF: the October spread at 100% scale with a 50 mm calibration ruler](docs/screenshots/print-a4.png)
 
-## Getting started
+## Download
+
+Get the latest version from the **[Releases page](https://github.com/tothda/notebook-designer/releases/latest)**:
+
+| Platform | File |
+| --- | --- |
+| macOS (Apple Silicon) | `Notebook-Designer-<version>-mac-arm64.dmg` |
+| macOS (Intel) | `Notebook-Designer-<version>-mac-x64.dmg` |
+| Windows | `Notebook-Designer-<version>-windows-x64-setup.exe` (or `-arm64-`) |
+| Linux | `.AppImage` (any distribution) or `.deb` (Debian/Ubuntu), for x64 and arm64 |
+
+The builds aren't signed with paid developer certificates, so your system will warn you the first time:
+
+- **macOS:** open the `.dmg` and drag the app to Applications. On first launch, macOS says it can't verify the developer. Click **Done**, then open **System Settings › Privacy & Security** and click **Open Anyway** next to *Notebook Designer*.
+- **Windows:** if SmartScreen shows *Windows protected your PC*, click **More info › Run anyway**.
+- **Linux:** make the AppImage executable (`chmod +x Notebook-Designer-*.AppImage`) and run it, or install the `.deb` with `sudo apt install ./Notebook-Designer-*.deb`.
+
+Double-clicking a `.nbdesign` file opens it in the app.
+
+## Running from source
 
 Requires [Node.js](https://nodejs.org) 20.19+ or 22.12+. Tested on macOS; Electron also runs on Windows and Linux.
 
@@ -56,7 +75,7 @@ npm run dev
 
 To explore, open [`examples/october-2026.nbdesign`](examples/october-2026.nbdesign) with **File → Open**. It contains the monthly and weekly spreads shown above.
 
-### A typical workflow
+## A typical workflow
 
 1. In the **Notebook** tab, pick your notebook. Then measure it with a ruler and adjust the page size, dot spacing and first-dot position if needed.
 2. Draw your layout. Use <kbd>⌘D</kbd> to duplicate, then move the copy and press <kbd>⌘D</kbd> again to repeat the same step. A row of seven calendar boxes takes seconds.
@@ -93,6 +112,23 @@ npm test           # unit tests (Vitest)
 npm run typecheck  # TypeScript
 npm run build      # production build into out/
 ```
+
+### Packaging and releases
+
+```bash
+npm run dist:mac     # or dist:win, dist:linux. Installers are written to dist/
+```
+
+Releases are built by GitHub Actions on macOS, Windows and Linux runners. To publish one, bump `version` in `package.json`, commit, and push a matching tag:
+
+```bash
+git tag v0.2.0
+git push origin v0.2.0
+```
+
+The [Release workflow](.github/workflows/release.yml) builds every installer and attaches them to a GitHub Release for that tag. Running the workflow manually from the Actions tab builds the installers as downloadable artifacts without publishing a release.
+
+### Architecture
 
 The app is built with Electron, React and TypeScript, bundled with electron-vite, with state in Zustand and undo/redo via zundo. Everything is drawn as SVG in millimetres, so the screen, print and PDF all render from the same code.
 
