@@ -191,16 +191,14 @@ export function SpreadView() {
     if (tool === 'text') {
       // Keep the browser from moving focus to the page, which would end in-place editing at once.
       e.preventDefault()
-      const between = style.textPlacement === 'between'
-      const rawY = mmToDotY(spec, mm.y)
       const textEl: TextElement = {
         id: newId(),
         type: 'text',
         page,
         color: style.color,
-        x: pt.x,
-        y: between ? (step > 0 ? Math.floor(rawY / step) * step : rawY) : pt.y,
+        ...newTextAnchor(style, { x: mmToDotX(spec, mm.x - originOf(page)), y: mmToDotY(spec, mm.y) }, pt, step),
         placement: style.textPlacement,
+        direction: style.textDirection,
         text: 'Text',
         font: style.font,
         bold: style.bold,
@@ -704,6 +702,25 @@ function resizeElement(el: Element, d: Extract<Drag, { kind: 'handle' }>): Eleme
     return { ...el, x: fixed.x, y: fixed.y, w: p.x - fixed.x, h: p.y - fixed.y }
   }
   return el
+}
+
+/**
+ * Anchor for new text at a click. On-row text starts at the nearest dot. Between-rows text
+ * goes in the gap that was clicked: the band below the anchor for horizontal text, the
+ * column gap to the left (reads downward) or right (reads upward) for turned text.
+ */
+function newTextAnchor(style: Style, raw: Pt, snapped: Pt, step: number): Pt {
+  if (style.textPlacement !== 'between') return snapped
+  const down = (v: number) => (step > 0 ? Math.floor(v / step + 1e-9) * step : v)
+  const up = (v: number) => (step > 0 ? Math.ceil(v / step - 1e-9) * step : v)
+  switch (style.textDirection) {
+    case 'down':
+      return { x: up(raw.x), y: snapped.y }
+    case 'up':
+      return { x: down(raw.x), y: snapped.y }
+    default:
+      return { x: snapped.x, y: down(raw.y) }
+  }
 }
 
 function isDegenerate(el: Element): boolean {

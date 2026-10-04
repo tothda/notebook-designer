@@ -1,10 +1,11 @@
 import { describeElement, formatPos, formatSpaces, formatMm } from '@shared/format'
 import { fitsOnPage, gridSize, unionRects } from '@shared/geometry'
-import type { Element, NotebookSpec, TextAlign } from '@shared/model'
+import type { Element, NotebookSpec, TextAlign, TextDirection } from '@shared/model'
 import { pageNumber } from '@shared/pages'
 import { boundsOf, maxBetweenSize } from '../measure'
 import { useEditor } from '../store'
 import { NumField } from './fields'
+import { DIRECTIONS } from './Toolbar'
 
 const TYPE_LABEL: Record<Element['type'], string> = {
   line: 'Line',
@@ -174,6 +175,7 @@ function TextEditor({
   spec: NotebookSpec
   update: (p: Partial<Element>) => void
 }) {
+  const vertical = el.direction !== 'horizontal'
   return (
     <div className="text-editor">
       <textarea
@@ -183,6 +185,19 @@ function TextEditor({
         style={{ fontFamily: `"${el.font}", cursive`, fontWeight: el.bold ? 700 : 400 }}
         aria-label="Text"
       />
+      <div className="segmented wide with-icons" role="group" aria-label="Direction">
+        {DIRECTIONS.map((d) => (
+          <button
+            key={d.id}
+            className={el.direction === d.id ? 'active' : ''}
+            title={d.title}
+            onClick={() => useEditor.getState().setStyle({ textDirection: d.id })}
+          >
+            {d.icon}
+            {d.label}
+          </button>
+        ))}
+      </div>
       <div className="segmented wide" role="group" aria-label="Placement">
         {(['baseline', 'between'] as const).map((p) => (
           <button
@@ -190,7 +205,13 @@ function TextEditor({
             className={el.placement === p ? 'active' : ''}
             onClick={() => useEditor.getState().setStyle({ textPlacement: p })}
           >
-            {p === 'baseline' ? 'On a dot row' : 'Between rows'}
+            {vertical
+              ? p === 'baseline'
+                ? 'Along a dot column'
+                : 'Between columns'
+              : p === 'baseline'
+                ? 'On a dot row'
+                : 'Between rows'}
           </button>
         ))}
       </div>
@@ -199,7 +220,7 @@ function TextEditor({
         <div className="segmented" role="group" aria-label="Alignment">
           {(['start', 'middle', 'end'] as TextAlign[]).map((a) => (
             <button key={a} className={el.align === a ? 'active' : ''} onClick={() => update({ align: a })}>
-              {a === 'start' ? 'Left' : a === 'middle' ? 'Centre' : 'Right'}
+              {ALIGN_LABELS[el.direction][a]}
             </button>
           ))}
         </div>
@@ -238,6 +259,13 @@ function BetweenFit({
       </button>
     </p>
   )
+}
+
+/** Where the text is anchored, in the words that match its direction on the page. */
+const ALIGN_LABELS: Record<TextDirection, Record<TextAlign, string>> = {
+  horizontal: { start: 'Left', middle: 'Centre', end: 'Right' },
+  down: { start: 'Top', middle: 'Middle', end: 'Bottom' },
+  up: { start: 'Bottom', middle: 'Middle', end: 'Top' }
 }
 
 function SelectionActions() {

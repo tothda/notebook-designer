@@ -1,5 +1,5 @@
 import { gridSize } from '@shared/geometry'
-import { baselineDots } from '@shared/text'
+import { baselineDots, rotationDeg } from '@shared/text'
 import { fontMetrics } from '../measure'
 import type { Dash, Element, NotebookSpec } from '@shared/model'
 
@@ -74,8 +74,10 @@ export function ElementShape({ el, spec }: Props) {
     case 'text': {
       const lines = el.text.split('\n')
       const m = fontMetrics(el.font, el.bold)
+      const deg = rotationDeg(el.direction)
       return (
         <text
+          transform={deg ? `rotate(${deg} ${X(el.x)} ${Y(el.y)})` : undefined}
           x={X(el.x)}
           y={Y(baselineDots(el, 0, m))}
           fill={el.color}

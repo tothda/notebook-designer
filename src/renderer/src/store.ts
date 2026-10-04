@@ -2,7 +2,7 @@ import { create } from 'zustand'
 import { temporal } from 'zundo'
 import { newDesign, newPageId, newPages } from '@shared/file'
 import { translateElement } from '@shared/geometry'
-import type { Dash, Design, Element, NotebookSpec, PageId, SpreadMode, TextPlacement } from '@shared/model'
+import type { Dash, Design, Element, NotebookSpec, PageId, SpreadMode, TextDirection, TextPlacement } from '@shared/model'
 import { slotOf, pageInSlot, spreadIndexOfPage, spreadsOf } from '@shared/pages'
 import { withPlacement } from '@shared/text'
 import { fitBetween } from './measure'
@@ -19,6 +19,7 @@ export interface Style {
   bold: boolean
   sizeDots: number
   textPlacement: TextPlacement
+  textDirection: TextDirection
   dotSizeMm: number
 }
 
@@ -85,6 +86,7 @@ const defaultStyle: Style = {
   bold: false,
   sizeDots: 1,
   textPlacement: 'baseline',
+  textDirection: 'horizontal',
   dotSizeMm: 1
 }
 
@@ -354,7 +356,7 @@ function styleOf(el: Element): Partial<Style> {
     case 'ellipse':
       return { color: el.color, strokeMm: el.strokeMm, dash: el.dash, fill: el.fill }
     case 'text':
-      return { color: el.color, font: el.font, bold: el.bold, sizeDots: el.sizeDots, textPlacement: el.placement }
+      return { color: el.color, font: el.font, bold: el.bold, sizeDots: el.sizeDots, textPlacement: el.placement, textDirection: el.direction }
     case 'dot':
       return { color: el.color, dotSizeMm: el.sizeMm }
   }
@@ -373,6 +375,8 @@ function applyStyle(el: Element, p: Partial<Style>): Element {
     if (p.font !== undefined) next.font = p.font
     if (p.bold !== undefined) next.bold = p.bold
     if (p.sizeDots !== undefined) next.sizeDots = p.sizeDots
+    // Turning text keeps its anchor (start of the first line) in place.
+    if (p.textDirection !== undefined) next.direction = p.textDirection
     if (p.textPlacement !== undefined) return withPlacement(next as unknown as typeof el, p.textPlacement)
   }
   if (el.type === 'dot' && p.dotSizeMm !== undefined) next.sizeMm = p.dotSizeMm

@@ -12,6 +12,7 @@ You have a dotted notebook (say an A6 Moleskine) and want to draw a monthly cale
 - **Everything snaps to the dots.** Draw lines, boxes, ellipses, dots/bullets and text. Half-dot snapping is optional, and you can hold <kbd>Alt</kbd> to place things freely.
 - **Copy by counting dots.** Dot numbers run along the edges of each page. The *Selection* panel spells out where each element starts and ends, e.g. *"Top-left col 3, row 6 · 14 × 15 spaces (70 × 75 mm)"*.
 - **Handwriting fonts.** Caveat, Patrick Hand, Kalam and Shadows Into Light are bundled, so the preview looks like handwriting, and everything works offline.
+- **Vertical text.** Turn any label to read downward (like a book spine) or upward, e.g. for habit-tracker columns or a month name down the side of a page. Coordinates and between-the-dots placement work the same way.
 - **Text that sits between the rows.** Place text on a dot row, like writing on a ruled line, or centred in the gap between two rows so it never touches the dots. Text is sized to fit automatically.
 - **A pen-like palette.** Black, grays, red and blue by default, all editable. Pen widths go from 0.1 to 0.8 mm, solid, dashed or dotted, with light highlighter fills.
 - **Fits-on-the-page check.** Anything running off the paper is outlined in red and flagged in the status bar.

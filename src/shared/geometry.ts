@@ -1,4 +1,4 @@
-import { DEFAULT_METRICS, textVerticalExtent, type FontMetrics } from './text'
+import { DEFAULT_METRICS, readingToPage, textVerticalExtent, type FontMetrics } from './text'
 import { SPREAD_GAP_MM, type Element, type NotebookSpec, type Slot } from './model'
 
 export interface Rect {
@@ -95,13 +95,29 @@ export function elementBounds(
     case 'text': {
       const lines = el.text.split('\n')
       const w = Math.max(...lines.map((l) => measure(l, el.font, el.bold, el.sizeDots)))
-      const x = el.align === 'start' ? el.x : el.align === 'middle' ? el.x - w / 2 : el.x - w
+      // Lay out in the reading frame (u along the line, v across it, relative to the anchor)...
+      const u0 = el.align === 'start' ? 0 : el.align === 'middle' ? -w / 2 : -w
+      let v0: number
+      let v1: number
       if (el.placement === 'between') {
         // The bands between dot rows, so the outline shows which rows the text sits between.
-        return { x, y: el.y, w, h: lines.length * el.lineHeightDots }
+        v0 = 0
+        v1 = lines.length * el.lineHeightDots
+      } else {
+        const { top, bottom } = textVerticalExtent(el, metrics(el.font, el.bold))
+        v0 = top - el.y
+        v1 = bottom - el.y
       }
-      const { top, bottom } = textVerticalExtent(el, metrics(el.font, el.bold))
-      return { x, y: top, w, h: bottom - top }
+      // ...then turn it onto the page.
+      const corners = [readingToPage(el, u0, v0), readingToPage(el, u0 + w, v1)]
+      const xs = corners.map((c) => c.x)
+      const ys = corners.map((c) => c.y)
+      return {
+        x: Math.min(...xs),
+        y: Math.min(...ys),
+        w: Math.max(...xs) - Math.min(...xs),
+        h: Math.max(...ys) - Math.min(...ys)
+      }
     }
   }
 }

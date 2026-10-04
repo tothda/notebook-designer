@@ -62,7 +62,13 @@ export function parseDesign(json: string): Design {
     }
   }
   const textDefaults = (el: Element): Element =>
-    el.type === 'text' && el.placement !== 'between' ? { ...el, placement: 'baseline' } : el
+    el.type === 'text'
+      ? {
+          ...el,
+          placement: el.placement === 'between' ? 'between' : 'baseline',
+          direction: el.direction === 'down' || el.direction === 'up' ? el.direction : 'horizontal'
+        }
+      : el
 
   let pages: Page[]
   let parsed = (elements as unknown as Element[]).map(textDefaults)

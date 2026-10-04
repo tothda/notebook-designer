@@ -37,6 +37,11 @@ export type TextAlign = 'start' | 'middle' | 'end'
  * 'between': each line is centred in the gap between two dot rows, clear of the dots.
  */
 export type TextPlacement = 'baseline' | 'between'
+/**
+ * 'horizontal': normal text. 'down': turned 90° clockwise, reads top to bottom (like a
+ * book spine). 'up': turned 90° anticlockwise, reads bottom to top.
+ */
+export type TextDirection = 'horizontal' | 'down' | 'up'
 
 interface ElementBase {
   id: string
@@ -86,6 +91,8 @@ export interface TextElement extends ElementBase {
   x: number
   y: number
   placement: TextPlacement
+  /** Rotated text is laid out as if horizontal, then turned about (x, y). */
+  direction: TextDirection
   text: string
   font: string
   bold: boolean
