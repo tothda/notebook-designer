@@ -11,13 +11,19 @@ describe('presets', () => {
   it('centres the grid on the page', () => {
     expect(centeredOffset(90, 5)).toBe(2.5)
     expect(centeredOffset(92, 5)).toBe(3.5)
-    expect(gridSize(spec)).toEqual({ cols: 18, rows: 28 })
+    expect(gridSize(NOTEBOOK_PRESETS[5])).toEqual({ cols: 21, rows: 29 })
+  })
+
+  it('matches the dot counts of Moleskine notebooks', () => {
+    expect(gridSize(spec)).toEqual({ cols: 17, rows: 27 })
+    expect(spec.gridOffsetXMm).toBe(5)
+    expect(gridSize(NOTEBOOK_PRESETS[1])).toEqual({ cols: 25, rows: 41 })
   })
 })
 
 describe('geometry', () => {
   it('converts dots and millimetres both ways', () => {
-    expect(dotToMmX(spec, 0)).toBe(2.5)
+    expect(dotToMmX(spec, 0)).toBe(5)
     expect(dotToMmX(spec, 10) - dotToMmX(spec, 0)).toBe(50)
     expect(mmToDotX(spec, dotToMmX(spec, 7.5))).toBeCloseTo(7.5)
   })
@@ -37,11 +43,11 @@ describe('geometry', () => {
   it('detects elements running off the paper', () => {
     const r: RectElement = {
       id: 'a', type: 'rect', page: 'left', color: '#000', strokeMm: 0.3, dash: 'solid',
-      x: 0, y: 0, w: 17, h: 27, fill: null, radiusDots: 0
+      x: 0, y: 0, w: 16, h: 26, fill: null, radiusDots: 0
     }
     expect(fitsOnPage(spec, elementBounds(r))).toBe(true)
     expect(fitsOnPage(spec, elementBounds({ ...r, w: 18 }))).toBe(false)
-    expect(fitsOnPage(spec, elementBounds({ ...r, x: -1 }))).toBe(false)
+    expect(fitsOnPage(spec, elementBounds({ ...r, x: -2 }))).toBe(false)
   })
 })
 
