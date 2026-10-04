@@ -815,3 +815,23 @@ kbd {
 .strip-actions .danger {
   color: var(--danger);
 }
+
+.segmented.icons button {
+  padding: 3px 6px;
+  display: grid;
+  place-items: center;
+}
+
+.segmented.with-icons button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 3px 6px;
+}
+
+.segmented.with-icons svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}

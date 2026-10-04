@@ -1,7 +1,7 @@
-import type { Dash } from '@shared/model'
+import type { Dash, TextDirection, TextPlacement } from '@shared/model'
 import { FONTS, PEN_WIDTHS_MM } from '@shared/palette'
 import { useEditor, type Tool } from '../store'
-import { icons } from './icons'
+import { icons, textIcons } from './icons'
 
 const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'select', label: 'Select', key: 'V' },
@@ -10,6 +10,17 @@ const TOOLS: { id: Tool; label: string; key: string }[] = [
   { id: 'ellipse', label: 'Ellipse', key: 'O' },
   { id: 'text', label: 'Text', key: 'T' },
   { id: 'dot', label: 'Dot / bullet', key: 'D' }
+]
+
+const PLACEMENTS: { id: TextPlacement; title: string; icon: React.ReactNode }[] = [
+  { id: 'baseline', title: 'Text stands on a dot row', icon: textIcons.onRow },
+  { id: 'between', title: 'Text sits between two dot rows, clear of the dots', icon: textIcons.between }
+]
+
+export const DIRECTIONS: { id: TextDirection; title: string; label: string; icon: React.ReactNode }[] = [
+  { id: 'horizontal', title: 'Horizontal text', label: 'Across', icon: textIcons.horizontal },
+  { id: 'down', title: 'Vertical text, reads downward', label: 'Down', icon: textIcons.down },
+  { id: 'up', title: 'Vertical text, reads upward', label: 'Up', icon: textIcons.up }
 ]
 
 export function Toolbar() {
@@ -102,23 +113,33 @@ export function Toolbar() {
             }}
           />
         </label>
-        <div className="segmented" role="group" aria-label="Text placement">
-          <button
-            className={style.textPlacement === 'baseline' ? 'active' : ''}
-            title="Letters stand on a dot row"
-            aria-pressed={style.textPlacement === 'baseline'}
-            onClick={() => setStyle({ textPlacement: 'baseline' })}
-          >
-            On row
-          </button>
-          <button
-            className={style.textPlacement === 'between' ? 'active' : ''}
-            title="Letters sit in the gap between two dot rows, clear of the dots"
-            aria-pressed={style.textPlacement === 'between'}
-            onClick={() => setStyle({ textPlacement: 'between' })}
-          >
-            Between
-          </button>
+        <div className="segmented icons" role="group" aria-label="Text placement">
+          {PLACEMENTS.map((o) => (
+            <button
+              key={o.id}
+              className={style.textPlacement === o.id ? 'active' : ''}
+              title={o.title}
+              aria-label={o.title}
+              aria-pressed={style.textPlacement === o.id}
+              onClick={() => setStyle({ textPlacement: o.id })}
+            >
+              {o.icon}
+            </button>
+          ))}
+        </div>
+        <div className="segmented icons" role="group" aria-label="Text direction">
+          {DIRECTIONS.map((o) => (
+            <button
+              key={o.id}
+              className={style.textDirection === o.id ? 'active' : ''}
+              title={o.title}
+              aria-label={o.title}
+              aria-pressed={style.textDirection === o.id}
+              onClick={() => setStyle({ textDirection: o.id })}
+            >
+              {o.icon}
+            </button>
+          ))}
         </div>
         <button
           className={`text-btn bold${style.bold ? ' active' : ''}`}

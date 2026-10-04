@@ -4,12 +4,12 @@ import { parseDesign } from './file'
 import { elementBounds } from './geometry'
 import type { TextElement } from './model'
 import { NOTEBOOK_PRESETS } from './presets'
-import { baselineDots, DEFAULT_METRICS, maxSizeBetween, textVerticalExtent, withPlacement } from './text'
+import { baselineDots, DEFAULT_METRICS, maxSizeBetween, readingToPage, textVerticalExtent, withPlacement } from './text'
 
 const m = { cap: 0.6, ascent: 0.7, descent: 0.2 }
 const text: TextElement = {
   id: 't', type: 'text', page: 'left', color: '#000', x: 2, y: 4, text: 'Mon\nTue', font: 'Caveat',
-  bold: false, sizeDots: 0.6, lineHeightDots: 1, align: 'start', placement: 'between'
+  bold: false, sizeDots: 0.6, lineHeightDots: 1, align: 'start', placement: 'between', direction: 'horizontal'
 }
 
 describe('between-rows text', () => {
@@ -53,3 +53,51 @@ describe('between-rows text', () => {
     expect((d.elements[0] as TextElement).placement).toBe('baseline')
   })
 })
+
+describe('vertical text', () => {
+  const word = { ...text, text: 'Week', x: 4, y: 2, sizeDots: 1, placement: 'baseline' as const }
+
+  it('maps the reading frame onto the page', () => {
+    expect(readingToPage({ x: 4, y: 2, direction: 'down' }, 3, 1)).toEqual({ x: 3, y: 5 })
+    expect(readingToPage({ x: 4, y: 2, direction: 'up' }, 3, 1)).toEqual({ x: 5, y: -1 })
+  })
+
+  it('turns the bounds with the text', () => {
+    // 3 dots long along the line; in the reading frame it spans v = -0.75 .. 0.25.
+    const measure = () => 3
+    expect(elementBounds({ ...word, direction: 'down' }, measure, () => DEFAULT_METRICS)).toEqual({ x: 3.75, y: 2, w: 1, h: 3 })
+    expect(elementBounds({ ...word, direction: 'up' }, measure, () => DEFAULT_METRICS)).toEqual({ x: 3.25, y: -1, w: 1, h: 3 })
+  })
+
+  it('places between-rows text between dot columns', () => {
+    const down = { ...text, x: 4, y: 2, direction: 'down' as const }
+    expect(elementBounds(down, () => 3)).toEqual({ x: 2, y: 2, w: 2, h: 3 })
+    expect(describeElement(down, NOTEBOOK_PRESETS[0]).slice(0, 3)).toEqual([
+      'Turned to read downward',
+      'Between cols 4 and 5',
+      'Starts at row 3'
+    ])
+    expect(describeElement({ ...down, direction: 'up' }, NOTEBOOK_PRESETS[0])[1]).toBe('Between cols 5 and 6')
+  })
+
+  it('describes on-row vertical text along a column', () => {
+    expect(describeElement({ ...word, direction: 'up' }, NOTEBOOK_PRESETS[0]).slice(0, 2)).toEqual([
+      'Turned to read upward',
+      'Baseline along col 5, starts at row 3'
+    ])
+  })
+
+  it('keeps turned text in place when switching placement', () => {
+    // Reads down: the line's baseline column x=4 becomes the band between columns 4 and 5 (0-based 3..4).
+    const between = withPlacement({ ...word, direction: 'down' }, 'between')
+    expect(between).toMatchObject({ x: 5, y: 2 })
+    expect(withPlacement(between, 'baseline')).toMatchObject({ x: 4, y: 2 })
+  })
+
+  it('defaults older saved text to horizontal', () => {
+    const { direction: _omit, ...old } = text
+    const d = parseDesign(JSON.stringify({ version: 2, pages: [{ id: 'left' }], elements: [old] }))
+    expect((d.elements[0] as TextElement).direction).toBe('horizontal')
+  })
+})
+

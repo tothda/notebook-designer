@@ -1,4 +1,5 @@
-import type { Element, NotebookSpec } from './model'
+import type { Element, NotebookSpec, TextElement } from './model'
+import { readingToPage } from './text'
 
 /** Dot index (0-based) to the 1-based number you count on paper: 2 → "3", 2.5 → "3½". */
 export function formatDot(d: number): string {
@@ -64,21 +65,35 @@ export function describeElement(el: Element, spec: NotebookSpec): string[] {
       ]
     }
     case 'text':
-      if (el.placement === 'between') {
-        const lines = el.text.split('\n').length
-        const anchor = el.align === 'start' ? 'Starts' : el.align === 'middle' ? 'Centred' : 'Ends'
-        return [
-          `Between rows ${formatDot(el.y)} and ${formatDot(el.y + el.lineHeightDots)}`,
-          `${anchor} at col ${formatDot(el.x)}`,
-          ...(lines > 1 ? [`${lines} lines, one every ${spacesLabel(el.lineHeightDots)}`] : []),
-          `Letter size ${spacesLabel(el.sizeDots)} (${mm(el.sizeDots)})`
-        ]
-      }
-      return [
-        `Baseline ${el.align === 'start' ? 'starts' : el.align === 'middle' ? 'centred' : 'ends'} at ${formatPos(el.x, el.y)}`,
-        `Letter size ${spacesLabel(el.sizeDots)} (${mm(el.sizeDots)})`
-      ]
+      return describeText(el, mm)
     case 'dot':
       return [`At ${formatPos(el.x, el.y)}`]
   }
+}
+
+function describeText(el: TextElement, mm: (d: number) => string): string[] {
+  const vertical = el.direction === 'down' || el.direction === 'up'
+  const lines = el.text.split('\n').length
+  const anchor = el.align === 'start' ? 'Starts' : el.align === 'middle' ? 'Centred' : 'Ends'
+  const out: string[] = []
+  if (vertical) out.push(el.direction === 'down' ? 'Turned to read downward' : 'Turned to read upward')
+  if (el.placement === 'between') {
+    // The band of the first line, in the axis across the text.
+    const a = readingToPage(el, 0, 0)
+    const b = readingToPage(el, 0, el.lineHeightDots)
+    if (vertical) {
+      out.push(`Between cols ${formatDot(Math.min(a.x, b.x))} and ${formatDot(Math.max(a.x, b.x))}`)
+      out.push(`${anchor} at row ${formatDot(el.y)}`)
+    } else {
+      out.push(`Between rows ${formatDot(el.y)} and ${formatDot(el.y + el.lineHeightDots)}`)
+      out.push(`${anchor} at col ${formatDot(el.x)}`)
+    }
+  } else if (vertical) {
+    out.push(`Baseline along col ${formatDot(el.x)}, ${anchor.toLowerCase()} at row ${formatDot(el.y)}`)
+  } else {
+    out.push(`Baseline ${anchor === 'Centred' ? 'centred' : anchor.toLowerCase()} at ${formatPos(el.x, el.y)}`)
+  }
+  if (lines > 1) out.push(`${lines} lines, one every ${spacesLabel(el.lineHeightDots)}`)
+  out.push(`Letter size ${spacesLabel(el.sizeDots)} (${mm(el.sizeDots)})`)
+  return out
 }

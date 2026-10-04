@@ -1,4 +1,4 @@
-import type { TextElement, TextPlacement } from './model'
+import type { TextDirection, TextElement, TextPlacement } from './model'
 
 /** Vertical font metrics as fractions of the font size (em). */
 export interface FontMetrics {
@@ -38,12 +38,34 @@ export function maxSizeBetween(lineHeightDots: number, clearanceDots: number, m:
   return Math.max(0, room / reach)
 }
 
+/** SVG rotation of the text about its anchor, in degrees (clockwise positive). */
+export function rotationDeg(direction: TextDirection | undefined): number {
+  return direction === 'down' ? 90 : direction === 'up' ? -90 : 0
+}
+
+/**
+ * Page position (dots) of a point given in the text's own reading frame: `u` along the
+ * line of text and `v` across it (downwards for upright text), both relative to (x, y).
+ */
+export function readingToPage(el: Pick<TextElement, 'x' | 'y' | 'direction'>, u: number, v: number): { x: number; y: number } {
+  switch (el.direction) {
+    case 'down':
+      return { x: el.x - v, y: el.y + u }
+    case 'up':
+      return { x: el.x + v, y: el.y - u }
+    default:
+      return { x: el.x + u, y: el.y + v }
+  }
+}
+
 /**
  * Re-anchor text when switching placement so it stays in the same place on the page:
- * a baseline on row r corresponds to the band between rows r - lineHeight and r.
+ * a baseline on row r corresponds to the band between rows r - lineHeight and r
+ * (measured across the line, so this also works for rotated text).
  */
 export function withPlacement(el: TextElement, placement: TextPlacement): TextElement {
   if ((el.placement ?? 'baseline') === placement) return el
   const shift = placement === 'between' ? -el.lineHeightDots : el.lineHeightDots
-  return { ...el, placement, y: el.y + shift }
+  const anchor = readingToPage(el, 0, shift)
+  return { ...el, placement, x: anchor.x, y: anchor.y }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
 import type { NotebookSpec, TextElement } from '@shared/model'
-import { baselineDots } from '@shared/text'
+import { baselineDots, rotationDeg } from '@shared/text'
 import { fontMetrics, measureTextDots } from '../measure'
 
 interface Props {
@@ -61,6 +61,10 @@ export function InlineTextEditor({ el, spec, px, marginMm, originMm, selectAll, 
   const anchorMm = originMm + spec.gridOffsetXMm + el.x * p
   const leftMm = el.align === 'start' ? anchorMm : el.align === 'middle' ? anchorMm - widthMm / 2 : anchorMm - widthMm
   const lines = el.text.split('\n').length
+  // Turned text: lay the box out as if horizontal, then rotate it about the text's anchor,
+  // exactly as the SVG does.
+  const deg = rotationDeg(el.direction)
+  const anchorYMm = spec.gridOffsetYMm + el.y * p
 
   return (
     <textarea
@@ -78,7 +82,9 @@ export function InlineTextEditor({ el, spec, px, marginMm, originMm, selectAll, 
         font: `${el.bold ? 700 : 400} ${sizeMm * px}px "${el.font}", cursive`,
         lineHeight: `${lineMm * px}px`,
         textAlign: el.align === 'start' ? 'left' : el.align === 'middle' ? 'center' : 'right',
-        caretColor: el.color
+        caretColor: el.color,
+        transform: deg ? `rotate(${deg}deg)` : undefined,
+        transformOrigin: `${(anchorMm - leftMm) * px}px ${(anchorYMm - topMm) * px}px`
       }}
       onChange={(e) => onChange(e.target.value)}
       onBlur={onDone}
