@@ -1,7 +1,21 @@
 {
   "name": "notebook-designer",
   "version": "0.1.0",
-  "description": "Design dotted-notebook layouts at true scale before copying them to paper",
+  "description": "Design dotted-notebook and bullet-journal layouts on a true-to-scale dot grid before copying them to paper",
+  "license": "MIT",
+  "author": "Dávid Tóth",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tothda/notebook-designer.git"
+  },
+  "homepage": "https://github.com/tothda/notebook-designer#readme",
+  "keywords": [
+    "bullet-journal",
+    "notebook",
+    "dot-grid",
+    "planner",
+    "electron"
+  ],
   "main": "./out/main/index.js",
   "private": true,
   "scripts": {
