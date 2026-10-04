@@ -1,7 +1,7 @@
 {
   "name": "notebook-designer",
   "productName": "Notebook Designer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Design dotted-notebook and bullet-journal layouts on a true-to-scale dot grid before copying them to paper",
   "license": "MIT",
   "author": "Dávid Tóth",
