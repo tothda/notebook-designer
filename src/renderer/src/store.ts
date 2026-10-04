@@ -127,11 +127,16 @@ export const useEditor = create<EditorState & EditorActions>()(
         const { selection } = get()
         if (!selection.length) return
         const spec = get().design.notebook
-        // Explicit size changes are respected; otherwise keep between-rows text clear of the dots.
+        // Moving text between the rows shrinks it to clear the dots. Any other change (colour,
+        // font, ...) keeps the size the user chose; a too-large size just shows a warning.
+        const refit = patch.textPlacement === 'between'
         get().updateElements(selection, (el) => {
           const styled = applyStyle(el, patch)
-          return patch.sizeDots === undefined ? fitBetween(styled, spec) : styled
+          return refit ? fitBetween(styled, spec) : styled
         })
+        // Show the selection's actual values in the toolbar, e.g. a size that was reduced to fit.
+        const first = get().design.elements.find((e) => e.id === selection[0])
+        if (first) set((s) => ({ style: { ...s.style, ...styleOf(first) } }))
       },
 
       select: (ids) =>
