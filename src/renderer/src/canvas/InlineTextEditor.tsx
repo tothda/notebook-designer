@@ -1,5 +1,4 @@
 import { useEffect, useLayoutEffect, useRef } from 'react'
-import { pageOriginMm } from '@shared/geometry'
 import type { NotebookSpec, TextElement } from '@shared/model'
 import { baselineDots } from '@shared/text'
 import { fontMetrics, measureTextDots } from '../measure'
@@ -11,6 +10,8 @@ interface Props {
   px: number
   /** Space around the spread in mm (where the SVG's viewBox starts). */
   marginMm: number
+  /** X position of the text's page within the spread, in mm. */
+  originMm: number
   selectAll: boolean
   /** Incremented to select all text (e.g. a triple-click that landed on the canvas). */
   selectAllRequest: number
@@ -23,7 +24,7 @@ interface Props {
  * keeps rendering the draft, so what you see while typing is what gets printed, and the
  * textarea only supplies the caret, selection and keyboard handling.
  */
-export function InlineTextEditor({ el, spec, px, marginMm, selectAll, selectAllRequest, onChange, onDone }: Props) {
+export function InlineTextEditor({ el, spec, px, marginMm, originMm, selectAll, selectAllRequest, onChange, onDone }: Props) {
   const ref = useRef<HTMLTextAreaElement>(null)
 
   useLayoutEffect(() => {
@@ -57,7 +58,7 @@ export function InlineTextEditor({ el, spec, px, marginMm, selectAll, selectAllR
   const textWidthDots = Math.max(...el.text.split('\n').map((l) => measureTextDots(l, el.font, el.bold, el.sizeDots)))
   const slackDots = el.align === 'middle' ? el.sizeDots * 2 : el.sizeDots
   const widthMm = (textWidthDots + slackDots) * p
-  const anchorMm = pageOriginMm(spec, el.page) + spec.gridOffsetXMm + el.x * p
+  const anchorMm = originMm + spec.gridOffsetXMm + el.x * p
   const leftMm = el.align === 'start' ? anchorMm : el.align === 'middle' ? anchorMm - widthMm / 2 : anchorMm - widthMm
   const lines = el.text.split('\n').length
 

@@ -5,12 +5,13 @@ import type { Design } from '@shared/model'
 import { SpreadView } from './canvas/SpreadView'
 import { Inspector } from './panels/Inspector'
 import { NotebookSettings } from './panels/NotebookSettings'
+import { PageStrip } from './panels/PageStrip'
 import { StatusBar } from './panels/StatusBar'
 import { Toolbar } from './panels/Toolbar'
 import { PrintDialog } from './print/PrintDialog'
 import { PrintView } from './print/PrintView'
 import type { PrintOptions } from './print/layout'
-import { isDirty, redo, undo, useEditor, type Tool } from './store'
+import { currentGroup, isDirty, redo, undo, useEditor, type Tool } from './store'
 import { translateElement } from '@shared/geometry'
 
 const TOOL_KEYS: Record<string, Tool> = { v: 'select', l: 'line', r: 'rect', o: 'ellipse', t: 'text', d: 'dot' }
@@ -26,7 +27,7 @@ export function App() {
   const printOpen = useEditor((s) => s.printOpen)
   const filePath = useEditor((s) => s.filePath)
   const dirty = useEditor(isDirty)
-  const [printOptions, setPrintOptions] = useState<PrintOptions>({ layout: 'a4', showDots: true, showBorder: true })
+  const [printOptions, setPrintOptions] = useState<PrintOptions>({ layout: 'a4', scope: 'all', showDots: true, showBorder: true })
   const [restored, setRestored] = useState(false)
   const name = fileTitle(filePath)
 
@@ -112,7 +113,10 @@ export function App() {
       <div className="app">
         <Toolbar />
         <main className="workspace">
-          <SpreadView />
+          <div className="canvas-column">
+            <SpreadView />
+            <PageStrip />
+          </div>
           <aside className="sidebar">
             <div className="tabs" role="tablist">
               <button
@@ -190,7 +194,10 @@ async function handleMenu(cmd: MenuCommand): Promise<void> {
       break
     case 'selectAll':
       if (editing) (document.activeElement as HTMLInputElement).select()
-      else s.select(s.design.elements.filter((e) => s.design.spread === 'double' || e.page === 'left').map((e) => e.id))
+      else {
+        const group = currentGroup(s)
+        s.select(s.design.elements.filter((e) => group.includes(e.page)).map((e) => e.id))
+      }
       break
     case 'duplicate':
       if (!editing) s.duplicateSelection()
@@ -225,6 +232,12 @@ function handleKey(e: KeyboardEvent): void {
     return
   }
   if (isEditingText() || s.printOpen || e.metaKey || e.ctrlKey) return
+
+  if (e.key === 'PageDown' || e.key === 'PageUp') {
+    s.goToSpread(s.currentSpread + (e.key === 'PageDown' ? 1 : -1))
+    e.preventDefault()
+    return
+  }
 
   const tool = TOOL_KEYS[e.key.toLowerCase()]
   if (tool && !e.altKey) {

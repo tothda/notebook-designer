@@ -5,19 +5,19 @@ import {
   mmToDotX,
   mmToDotY,
   normalizeRect,
-  pageAtMm,
   pageOriginMm,
   pageShiftDots,
   rectsIntersect,
+  slotAtMm,
   snap,
   spreadWidthMm,
   translateElement,
-  visiblePages,
   type Rect
 } from '@shared/geometry'
-import type { Element, NotebookSpec, PageId, SpreadMode, TextElement } from '@shared/model'
+import type { Element, NotebookSpec, PageId, Slot, TextElement } from '@shared/model'
+import { pageInSlot, slotOf } from '@shared/pages'
 import { boundsOf, fitBetween } from '../measure'
-import { newId, useEditor, type Style, type Tool } from '../store'
+import { currentGroup, newId, useEditor, type Style, type Tool } from '../store'
 import { ElementShape, PageBackground } from './ElementShape'
 import { InlineTextEditor } from './InlineTextEditor'
 
@@ -48,7 +48,14 @@ export function SpreadView() {
   const zoom = useEditor((s) => s.zoom)
   const halfDotSnap = useEditor((s) => s.halfDotSnap)
   const cursor = useEditor((s) => s.cursor)
-  const { spec, spread } = { spec: design.notebook, spread: design.spread }
+  const currentSpread = useEditor((s) => s.currentSpread)
+  const spec = design.notebook
+  /** Ids of the pages in view: [left] or [left, right]. */
+  const group = useMemo(
+    () => currentGroup({ design, currentSpread }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [design.pages, design.spread, currentSpread]
+  )
 
   const scrollRef = useRef<HTMLDivElement>(null)
   const svgRef = useRef<SVGSVGElement>(null)
@@ -61,9 +68,10 @@ export function SpreadView() {
   const [editing, setEditing] = useState<{ id: string; text: string; isNew: boolean } | null>(null)
   const [selectAllRequest, setSelectAllRequest] = useState(0)
 
-  const totalW = spreadWidthMm(spec, spread) + MARGIN_MM * 2
+  const totalW = spreadWidthMm(spec, group.length) + MARGIN_MM * 2
   const totalH = spec.pageHeightMm + MARGIN_MM * 2
-  const pages = visiblePages(spread)
+  const pageAt = (xMm: number): PageId => pageInSlot(group, slotAtMm(spec, group.length, xMm))
+  const originOf = (page: PageId) => pageOriginMm(spec, slotOf(group, page))
 
   const updateDrag = (d: Drag | null) => {
     dragRef.current = d
@@ -86,7 +94,7 @@ export function SpreadView() {
   // Re-fit when the paper size or spread mode changes.
   useEffect(() => {
     fit()
-  }, [spec.pageWidthMm, spec.pageHeightMm, spread, fit])
+  }, [spec.pageWidthMm, spec.pageHeightMm, group.length, fit])
 
   useEffect(() => {
     const el = scrollRef.current
@@ -123,7 +131,7 @@ export function SpreadView() {
   const eventMm = (e: React.PointerEvent): Pt => clientToMm(svgRef.current!, e.clientX, e.clientY)
 
   const pageDots = (mm: Pt, page: PageId, step: number): Pt => ({
-    x: snap(mmToDotX(spec, mm.x - pageOriginMm(spec, page)), step),
+    x: snap(mmToDotX(spec, mm.x - originOf(page)), step),
     y: snap(mmToDotY(spec, mm.y), step)
   })
 
@@ -165,7 +173,7 @@ export function SpreadView() {
     const svg = svgRef.current!
     svg.setPointerCapture(e.pointerId)
     const mm = eventMm(e)
-    const page = pageAtMm(spec, spread, mm.x)
+    const page = pageAt(mm.x)
     const step = stepFor(e)
     const pt = pageDots(mm, page, step)
     const store = useEditor.getState()
@@ -237,7 +245,7 @@ export function SpreadView() {
   const onPointerMove = (e: React.PointerEvent) => {
     const mm = eventMm(e)
     const step = stepFor(e)
-    const hoverPage = pageAtMm(spec, spread, mm.x)
+    const hoverPage = pageAt(mm.x)
     const hover = pageDots(mm, hoverPage, step === 0 ? 0.5 : step)
     useEditor.getState().setCursor({ page: hoverPage, x: hover.x, y: hover.y })
 
@@ -264,7 +272,7 @@ export function SpreadView() {
       }
       case 'marquee': {
         updateDrag({ ...d, currentMm: mm })
-        useEditor.getState().select(marqueeSelection(design.elements, spec, spread, d.startMm, mm, d.base))
+        useEditor.getState().select(marqueeSelection(design.elements, spec, group, d.startMm, mm, d.base))
         break
       }
     }
@@ -282,7 +290,7 @@ export function SpreadView() {
       if (d.dx === 0 && d.dy === 0) return
       const moved = preview.elements
         .filter((el) => d.ids.includes(el.id))
-        .map((el) => reassignPage(el, spec, spread, d.step))
+        .map((el) => reassignPage(el, spec, group, d.step))
       store.replaceElements(moved)
     } else if (d.kind === 'handle') {
       const el = preview.elements.find((x) => x.id === d.id)
@@ -332,16 +340,17 @@ export function SpreadView() {
             onDoubleClick={onDoubleClick}
             onClick={onClick}
           >
-            {pages.map((page) => {
+            {group.map((page) => {
+              const slot = slotOf(group, page)
               const pageEls = preview.elements.filter((el) => el.page === page)
               const created = preview.created?.page === page ? preview.created : null
               return (
-                <g key={page} transform={`translate(${pageOriginMm(spec, page)} 0)`}>
+                <g key={page} transform={`translate(${pageOriginMm(spec, slot)} 0)`}>
                   <PageBackground spec={spec} showDots showBorder />
                   <Rulers
                     spec={spec}
-                    page={page}
-                    spread={spread}
+                    slot={slot}
+                    double={group.length > 1}
                     cols={cols}
                     rows={rows}
                     px={px}
@@ -407,6 +416,7 @@ export function SpreadView() {
               spec={spec}
               px={px}
               marginMm={MARGIN_MM}
+              originMm={originOf(editingEl.page)}
               selectAll={editing!.isNew}
               selectAllRequest={selectAllRequest}
               onChange={(text) => setEditing((cur) => (cur ? { ...cur, text } : cur))}
@@ -423,20 +433,20 @@ export function SpreadView() {
 
 function Rulers(props: {
   spec: NotebookSpec
-  page: PageId
-  spread: SpreadMode
+  slot: Slot
+  double: boolean
   cols: number
   rows: number
   px: number
   hover: Pt | null
 }) {
-  const { spec, page, spread, cols, rows, px, hover } = props
+  const { spec, slot, double, cols, rows, px, hover } = props
   const p = spec.dotPitchMm
   const fontSize = 9 / px
   // Label every dot when there's room, otherwise every 5th.
   const every = p * px >= 14 ? 1 : 5
   const show = (i: number) => (i + 1) % every === 0 || i === 0
-  const rowsOnRight = spread === 'double' && page === 'right'
+  const rowsOnRight = double && slot === 'right'
   const rowX = rowsOnRight ? spec.pageWidthMm + 3.5 : -3.5
   const isHover = (axis: 'x' | 'y', i: number) => hover !== null && Math.abs(hover[axis] - i) < 1e-6
   const label = (i: number, axis: 'x' | 'y') => ({
@@ -708,17 +718,18 @@ function normalizeElement(el: Element): Element {
 }
 
 /** Move an element dragged across the gutter onto the other page of the spread. */
-function reassignPage(el: Element, spec: NotebookSpec, spread: SpreadMode, step: number): Element {
+function reassignPage(el: Element, spec: NotebookSpec, group: PageId[], step: number): Element {
   const norm = normalizeElement(el)
-  if (spread === 'single') return norm
+  if (group.length < 2) return norm
+  const [left, right] = group
   const b = boundsOf(norm)
   const centerMm = spec.gridOffsetXMm + (b.x + b.w / 2) * spec.dotPitchMm
   const shift = step > 0 ? snap(pageShiftDots(spec), step) : pageShiftDots(spec)
-  if (el.page === 'left' && centerMm > spec.pageWidthMm + 4) {
-    return { ...translateElement(norm, -shift, 0), page: 'right' }
+  if (el.page === left && centerMm > spec.pageWidthMm + 4) {
+    return { ...translateElement(norm, -shift, 0), page: right }
   }
-  if (el.page === 'right' && centerMm < -4) {
-    return { ...translateElement(norm, shift, 0), page: 'left' }
+  if (el.page === right && centerMm < -4) {
+    return { ...translateElement(norm, shift, 0), page: left }
   }
   return norm
 }
@@ -726,14 +737,14 @@ function reassignPage(el: Element, spec: NotebookSpec, spread: SpreadMode, step:
 function marqueeSelection(
   elements: Element[],
   spec: NotebookSpec,
-  spread: SpreadMode,
+  group: PageId[],
   a: Pt,
   b: Pt,
   base: string[]
 ): string[] {
   const ids = new Set(base)
-  for (const page of visiblePages(spread)) {
-    const ox = pageOriginMm(spec, page)
+  for (const page of group) {
+    const ox = pageOriginMm(spec, slotOf(group, page))
     const r = normalizeRect({
       x: mmToDotX(spec, a.x - ox),
       y: mmToDotY(spec, a.y),

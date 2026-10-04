@@ -7,7 +7,7 @@
  * that do not follow the grid (pen width, dot-mark size) are in millimetres.
  */
 
-export const DESIGN_VERSION = 1
+export const DESIGN_VERSION = 2
 
 export interface NotebookSpec {
   name: string
@@ -21,8 +21,15 @@ export interface NotebookSpec {
   dotDiameterMm: number
 }
 
-export type PageId = 'left' | 'right'
+/** Stable id of a page; elements refer to their page by id so pages can be reordered. */
+export type PageId = string
+/** Position of a page within the spread on screen. */
+export type Slot = 'left' | 'right'
 export type SpreadMode = 'single' | 'double'
+
+export interface Page {
+  id: PageId
+}
 export type Dash = 'solid' | 'dashed' | 'dotted'
 export type TextAlign = 'start' | 'middle' | 'end'
 /**
@@ -102,6 +109,11 @@ export type ElementType = Element['type']
 export interface Design {
   version: number
   notebook: NotebookSpec
+  /**
+   * Pages in notebook order. In 'double' mode they pair up into spreads:
+   * pages 1–2, 3–4, … (a trailing odd page forms a spread on its own).
+   */
+  pages: Page[]
   spread: SpreadMode
   palette: string[]
   elements: Element[]

@@ -1,13 +1,20 @@
-import { DESIGN_VERSION, type Design, type Element } from './model'
+import { DESIGN_VERSION, type Design, type Element, type Page } from './model'
 import { DEFAULT_NOTEBOOK } from './presets'
 import { DEFAULT_PALETTE } from './palette'
 
 export const FILE_EXTENSION = 'nbdesign'
 
+export const newPageId = (): string => crypto.randomUUID()
+
+export function newPages(count: number): Page[] {
+  return Array.from({ length: count }, () => ({ id: newPageId() }))
+}
+
 export function newDesign(): Design {
   return {
     version: DESIGN_VERSION,
     notebook: { ...DEFAULT_NOTEBOOK },
+    pages: newPages(2),
     spread: 'double',
     palette: [...DEFAULT_PALETTE],
     elements: []
@@ -54,17 +61,34 @@ export function parseDesign(json: string): Design {
       throw new DesignParseError('Design contains an unknown element')
     }
   }
+  const textDefaults = (el: Element): Element =>
+    el.type === 'text' && el.placement !== 'between' ? { ...el, placement: 'baseline' } : el
+
+  let pages: Page[]
+  let parsed = (elements as unknown as Element[]).map(textDefaults)
+  if (version < 2) {
+    // v1 designs had exactly one spread, with elements on page 'left' or 'right'.
+    pages = newPages(2)
+    const [left, right] = pages
+    parsed = parsed.map((el) => ({ ...el, page: (el.page as string) === 'right' ? right.id : left.id }))
+  } else {
+    const rawPages = Array.isArray(raw.pages) ? raw.pages : []
+    pages = rawPages.filter((p): p is Page => isObject(p) && typeof p.id === 'string').map((p) => ({ id: p.id }))
+    if (pages.length === 0) pages = newPages(1)
+    const known = new Set(pages.map((p) => p.id))
+    parsed = parsed.map((el) => (known.has(el.page) ? el : { ...el, page: pages[0].id }))
+  }
+
   return {
     version: DESIGN_VERSION,
     notebook,
+    pages,
     spread: raw.spread === 'single' ? 'single' : 'double',
     palette:
       Array.isArray(raw.palette) && raw.palette.every((c) => typeof c === 'string') && raw.palette.length > 0
         ? (raw.palette as string[])
         : base.palette,
-    elements: (elements as unknown as Element[]).map((el) =>
-      el.type === 'text' && el.placement !== 'between' ? { ...el, placement: 'baseline' } : el
-    )
+    elements: parsed
   }
 }
 

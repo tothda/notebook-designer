@@ -1,5 +1,5 @@
 import { DEFAULT_METRICS, textVerticalExtent, type FontMetrics } from './text'
-import { SPREAD_GAP_MM, type Element, type NotebookSpec, type PageId, type SpreadMode } from './model'
+import { SPREAD_GAP_MM, type Element, type NotebookSpec, type Slot } from './model'
 
 export interface Rect {
   x: number
@@ -39,22 +39,21 @@ export function snap(v: number, step: number): number {
   return Math.round(v / step) * step
 }
 
-export function visiblePages(spread: SpreadMode): PageId[] {
-  return spread === 'double' ? ['left', 'right'] : ['left']
-}
+export const SLOTS: Slot[] = ['left', 'right']
 
 /** X position of a page's left edge within the spread, in mm. */
-export function pageOriginMm(spec: NotebookSpec, page: PageId): number {
-  return page === 'left' ? 0 : spec.pageWidthMm + SPREAD_GAP_MM
+export function pageOriginMm(spec: NotebookSpec, slot: Slot): number {
+  return slot === 'left' ? 0 : spec.pageWidthMm + SPREAD_GAP_MM
 }
 
-export function spreadWidthMm(spec: NotebookSpec, spread: SpreadMode): number {
-  return spread === 'double' ? spec.pageWidthMm * 2 + SPREAD_GAP_MM : spec.pageWidthMm
+/** Width of a spread showing `pageCount` (1 or 2) pages side by side. */
+export function spreadWidthMm(spec: NotebookSpec, pageCount: number): number {
+  return pageCount > 1 ? spec.pageWidthMm * 2 + SPREAD_GAP_MM : spec.pageWidthMm
 }
 
-/** Which page a spread x-coordinate (mm) belongs to; the gap splits halfway. */
-export function pageAtMm(spec: NotebookSpec, spread: SpreadMode, xMm: number): PageId {
-  if (spread === 'single') return 'left'
+/** Which slot a spread x-coordinate (mm) belongs to; the gap splits halfway. */
+export function slotAtMm(spec: NotebookSpec, pageCount: number, xMm: number): Slot {
+  if (pageCount < 2) return 'left'
   return xMm < spec.pageWidthMm + SPREAD_GAP_MM / 2 ? 'left' : 'right'
 }
 

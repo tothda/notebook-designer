@@ -1,6 +1,8 @@
-import { useEditor } from '../store'
+import { useMemo } from 'react'
+import { spreadLabel } from '@shared/pages'
+import { currentGroup, useEditor } from '../store'
 import { ElementShape, PageBackground } from '../canvas/ElementShape'
-import { planPrint, type PrintOptions } from './layout'
+import { planPrint, spreadsToPrint, type PrintOptions } from './layout'
 
 /**
  * Print-only markup: hidden on screen, shown under @media print. Every size is in
@@ -8,8 +10,12 @@ import { planPrint, type PrintOptions } from './layout'
  */
 export function PrintView({ options }: { options: PrintOptions }) {
   const design = useEditor((s) => s.design)
+  const currentSpread = useEditor((s) => s.currentSpread)
   const spec = design.notebook
-  const plan = planPrint(spec, design.spread, options.layout)
+  const plan = useMemo(
+    () => planPrint(spec, spreadsToPrint(design, currentGroup({ design, currentSpread }), options.scope), options.layout),
+    [design, currentSpread, spec, options.scope, options.layout]
+  )
 
   return (
     <div className="print-root" aria-hidden>
@@ -47,7 +53,12 @@ export function PrintView({ options }: { options: PrintOptions }) {
                 strokeDasharray="1.5 1"
               />
             )}
-            {sheet.calibration && <CalibrationBar y={plan.heightMm - 14} name={spec.name} />}
+            {sheet.calibration && (
+              <CalibrationBar
+                y={plan.heightMm - 14}
+                name={`${spec.name} · ${spreadLabel(design, sheet.pages.map((p) => p.page))}`}
+              />
+            )}
           </svg>
         </div>
       ))}

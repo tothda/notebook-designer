@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { describeElement, formatDot, formatSpaces } from './format'
 import { DesignParseError, newDesign, parseDesign, serializeDesign } from './file'
-import { dotToMmX, elementBounds, fitsOnPage, gridSize, mmToDotX, pageAtMm, snap } from './geometry'
+import { dotToMmX, elementBounds, fitsOnPage, gridSize, mmToDotX, slotAtMm, snap } from './geometry'
 import { centeredOffset, NOTEBOOK_PRESETS } from './presets'
 import type { LineElement, RectElement } from './model'
 
@@ -28,10 +28,10 @@ describe('geometry', () => {
     expect(snap(3.3, 0)).toBe(3.3)
   })
 
-  it('assigns spread positions to pages', () => {
-    expect(pageAtMm(spec, 'double', 10)).toBe('left')
-    expect(pageAtMm(spec, 'double', 120)).toBe('right')
-    expect(pageAtMm(spec, 'single', 120)).toBe('left')
+  it('assigns spread positions to left and right pages', () => {
+    expect(slotAtMm(spec, 2, 10)).toBe('left')
+    expect(slotAtMm(spec, 2, 120)).toBe('right')
+    expect(slotAtMm(spec, 1, 120)).toBe('left')
   })
 
   it('detects elements running off the paper', () => {
@@ -69,7 +69,7 @@ describe('format', () => {
 describe('file', () => {
   it('round-trips a design', () => {
     const d = newDesign()
-    d.elements.push({ id: 'x', type: 'dot', page: 'right', color: '#c8312b', x: 1, y: 2, sizeMm: 1 })
+    d.elements.push({ id: 'x', type: 'dot', page: d.pages[1].id, color: '#c8312b', x: 1, y: 2, sizeMm: 1 })
     expect(parseDesign(serializeDesign(d))).toEqual(d)
   })
 

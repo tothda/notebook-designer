@@ -1,6 +1,7 @@
 import { describeElement, formatPos, formatSpaces, formatMm } from '@shared/format'
 import { fitsOnPage, gridSize, unionRects } from '@shared/geometry'
 import type { Element, NotebookSpec, TextAlign } from '@shared/model'
+import { pageNumber } from '@shared/pages'
 import { boundsOf, maxBetweenSize } from '../measure'
 import { useEditor } from '../store'
 import { NumField } from './fields'
@@ -17,12 +18,13 @@ export function Inspector() {
   const elements = useEditor((s) => s.design.elements)
   const selection = useEditor((s) => s.selection)
   const spec = useEditor((s) => s.design.notebook)
-  const spread = useEditor((s) => s.design.spread)
+  const pages = useEditor((s) => s.design.pages)
+  const pageLabel = (id: string) => `Page ${pageNumber({ pages }, id)}`
   const selected = elements.filter((e) => selection.includes(e.id))
 
   if (selected.length === 0) return <NothingSelected spec={spec} count={elements.length} />
-  if (selected.length > 1) return <MultiSelection els={selected} spec={spec} />
-  return <SingleElement el={selected[0]} spec={spec} showPage={spread === 'double'} />
+  if (selected.length > 1) return <MultiSelection els={selected} spec={spec} pageLabel={pageLabel} />
+  return <SingleElement el={selected[0]} spec={spec} pageLabel={pageLabel(selected[0].page)} />
 }
 
 function NothingSelected({ spec, count }: { spec: NotebookSpec; count: number }) {
@@ -57,7 +59,15 @@ function NothingSelected({ spec, count }: { spec: NotebookSpec; count: number })
   )
 }
 
-function MultiSelection({ els, spec }: { els: Element[]; spec: NotebookSpec }) {
+function MultiSelection({
+  els,
+  spec,
+  pageLabel
+}: {
+  els: Element[]
+  spec: NotebookSpec
+  pageLabel: (id: string) => string
+}) {
   const pages = [...new Set(els.map((e) => e.page))]
   return (
     <div className="panel-body">
@@ -66,7 +76,7 @@ function MultiSelection({ els, spec }: { els: Element[]; spec: NotebookSpec }) {
         const b = unionRects(els.filter((e) => e.page === page).map(boundsOf))!
         return (
           <div className="copy-card" key={page}>
-            {pages.length > 1 && <div className="card-label">{page === 'left' ? 'Left page' : 'Right page'}</div>}
+            {pages.length > 1 && <div className="card-label">{pageLabel(page)}</div>}
             <p>Top-left {formatPos(b.x, b.y)}</p>
             <p>Bottom-right {formatPos(b.x + b.w, b.y + b.h)}</p>
             <p>
@@ -81,7 +91,7 @@ function MultiSelection({ els, spec }: { els: Element[]; spec: NotebookSpec }) {
   )
 }
 
-function SingleElement({ el, spec, showPage }: { el: Element; spec: NotebookSpec; showPage: boolean }) {
+function SingleElement({ el, spec, pageLabel }: { el: Element; spec: NotebookSpec; pageLabel: string }) {
   const update = (patch: Partial<Element>) =>
     useEditor.getState().updateElements([el.id], (e) => ({ ...e, ...patch }) as Element)
   const fits = fitsOnPage(spec, boundsOf(el))
@@ -90,7 +100,7 @@ function SingleElement({ el, spec, showPage }: { el: Element; spec: NotebookSpec
     <div className="panel-body">
       <h3>
         {TYPE_LABEL[el.type]}
-        {showPage && <span className="page-tag">{el.page === 'left' ? 'left page' : 'right page'}</span>}
+        <span className="page-tag">{pageLabel}</span>
       </h3>
 
       <div className="copy-card" aria-label="How to copy onto paper">

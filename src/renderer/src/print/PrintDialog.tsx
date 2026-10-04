@@ -1,6 +1,7 @@
 import { useState } from 'react'
-import { useEditor } from '../store'
-import { planPrint, type PrintOptions } from './layout'
+import { spreadLabel, spreadsOf } from '@shared/pages'
+import { currentGroup, useEditor } from '../store'
+import { planPrint, spreadsToPrint, type PrintOptions } from './layout'
 
 interface Props {
   options: PrintOptions
@@ -9,11 +10,14 @@ interface Props {
 }
 
 export function PrintDialog({ options, onChange, defaultName }: Props) {
-  const spec = useEditor((s) => s.design.notebook)
-  const spread = useEditor((s) => s.design.spread)
+  const design = useEditor((s) => s.design)
+  const currentSpread = useEditor((s) => s.currentSpread)
+  const spec = design.notebook
   const close = () => useEditor.getState().setPrintOpen(false)
   const [busy, setBusy] = useState(false)
-  const plan = planPrint(spec, spread, options.layout)
+  const group = currentGroup({ design, currentSpread })
+  const plan = planPrint(spec, spreadsToPrint(design, group, options.scope), options.layout)
+  const multiple = spreadsOf(design).length > 1
   const paper = { widthMm: plan.widthMm, heightMm: plan.heightMm, defaultName }
 
   const run = async (action: 'pdf' | 'print') => {
@@ -64,6 +68,23 @@ export function PrintDialog({ options, onChange, defaultName }: Props) {
             </span>
           </label>
         </fieldset>
+
+        {multiple && (
+          <fieldset>
+            <legend>Pages</legend>
+            <div className="segmented wide" role="group" aria-label="Pages to print">
+              <button className={options.scope === 'all' ? 'active' : ''} onClick={() => onChange({ ...options, scope: 'all' })}>
+                All {design.pages.length} pages
+              </button>
+              <button
+                className={options.scope === 'current' ? 'active' : ''}
+                onClick={() => onChange({ ...options, scope: 'current' })}
+              >
+                {spreadLabel(design, group)} only
+              </button>
+            </div>
+          </fieldset>
+        )}
 
         <fieldset>
           <legend>Show</legend>
