@@ -78,6 +78,14 @@ One page to score each area of life every day, from 1 (rough) to 5 (great), with
 
 [`october-2026-life-scores-a5.nbdesign`](examples/october-2026-life-scores-a5.nbdesign)
 
+### Weekly strips and to-do columns
+
+Six Monday-to-Sunday week strips across the spread, three per page, each a 7-dot bracket with one column per day for short notes written downwards. Under every week runs a to-do column: 15 checkboxes with writing lines, two rows apart.
+
+![October weekly to-dos: three week strips per page with dates and red weekday letters, each above a column of checkboxes](docs/gallery/october-2026-weekly-todo-a5.png)
+
+[`october-2026-weekly-todo-a5.nbdesign`](examples/october-2026-weekly-todo-a5.nbdesign)
+
 ## Download
 
 Get the latest version from the **[Releases page](https://github.com/tothda/notebook-designer/releases/latest)**:
